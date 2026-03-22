@@ -1,0 +1,6 @@
+<svg width="480" height="800" viewBox="0 0 480 800" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect x="16" y="16" width="448" height="768" rx="28" fill="#9A6A3A"/>
+  <rect x="28" y="28" width="424" height="744" rx="20" stroke="#F8EFD9" stroke-width="2"/>
+  <text x="240" y="390" text-anchor="middle" font-size="64" fill="#FFF8EA" font-family="Montserrat, Trebuchet MS, sans-serif" font-weight="700">Tarot</text>
+  <text x="240" y="436" text-anchor="middle" font-size="30" fill="#FCEED5" font-family="Montserrat, Trebuchet MS, sans-serif">Atlas</text>
+</svg>

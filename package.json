@@ -1,0 +1,16 @@
+{
+  "name": "tarot-portfolio",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm --workspace apps/api run start:dev\" \"npm --workspace apps/web run dev\"",
+    "build": "npm --workspace apps/api run build && npm --workspace apps/web run build",
+    "test": "npm --workspace apps/api run test && npm --workspace apps/web run test"
+  },
+  "devDependencies": {
+    "concurrently": "^9.0.1"
+  }
+}

@@ -1,0 +1,7 @@
+services:
+  janusgraph:
+    image: janusgraph/janusgraph:latest
+    container_name: tarot-janusgraph
+    ports:
+      - '8182:8182'
+    restart: unless-stopped
