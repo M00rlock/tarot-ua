@@ -6,7 +6,6 @@
     <header class="hero hero-ritual" :class="{ 'hero-v2': flags.mysticHeroV2 }">
       <div class="hero-top">
         <p class="eyebrow">Пет-проєкт для портфоліо</p>
-        <button class="theme-toggle" type="button" @click="toggleTheme">{{ theme === 'dark' ? '☀️ Світла тема' : '🌙 Mystic тема' }}</button>
       </div>
       <h1>Таро Черіот</h1>
       <p class="subtitle">{{ flags.mysticHeroV2 ? 'Сформулюйте питання подумки. Оберіть розклад — і нехай карти покажуть прихований вектор.' : 'Зосередьтесь на своєму питанні. Оберіть ритуал — і карти відкриються у правильному ритмі.' }}</p>
@@ -144,7 +143,6 @@ const boardSection = ref<HTMLElement | null>(null);
 const selectorCollapsed = ref(false);
 const boardPulse = ref(false);
 const currentUser = ref<AuthUser | null>(null);
-const theme = ref<'dark' | 'light'>((localStorage.getItem('tarot-theme') as 'dark' | 'light') || 'dark');
 const authMode = ref<'login' | 'register'>('login');
 const authLoading = ref(false);
 const authForm = ref({ name: '', email: '', password: '' });
@@ -184,18 +182,6 @@ async function chooseSpread(type: SpreadType) {
 const todayLabel = new Intl.DateTimeFormat('uk-UA', {
   dateStyle: 'full'
 }).format(new Date());
-
-function applyTheme() {
-  document.documentElement.dataset.theme = theme.value;
-  localStorage.setItem('tarot-theme', theme.value);
-}
-
-function toggleTheme() {
-  theme.value = theme.value === 'dark' ? 'light' : 'dark';
-  applyTheme();
-  trackEvent('theme_changed', { theme: theme.value });
-}
-
 
 async function syncUserLists() {
   if (!currentUser.value) {
@@ -537,8 +523,7 @@ async function copySpreadText() {
 }
 
 onMounted(async () => {
-  applyTheme();
-  trackEvent('app_opened', { theme: theme.value });
+  trackEvent('app_opened', { });
 
   try {
     if (getAccessToken()) {
@@ -1619,44 +1604,6 @@ onMounted(async () => {
 .error { color: #ff9a9a; }
 .success { color: #bdf2a1; }
 
-:global([data-theme='light']) .ambient-orb {
-  display: none;
-}
-
-:global([data-theme='light']) .hero,
-:global([data-theme='light']) .panel {
-  background: rgba(255, 250, 240, 0.92);
-  border-color: #dfcda8;
-  box-shadow: 0 18px 45px rgba(85, 54, 24, 0.08);
-  backdrop-filter: none;
-}
-
-:global([data-theme='light']) .hero {
-  background: linear-gradient(135deg, #fff9ed 0%, #f4e0bd 100%);
-}
-
-:global([data-theme='light']) .hero::before,
-:global([data-theme='light']) .panel::before,
-:global([data-theme='light']) .spread-board-clean::after {
-  display: none;
-}
-
-:global([data-theme='light']) .theme-toggle {
-  background: #fffaf0;
-  color: #2d2418;
-  border-color: #dfcda8;
-}
-
-:global([data-theme='light']) .auth-input {
-  background: #fffdf8;
-  color: #2d2418;
-  border-color: #d7bd92;
-}
-
-:global([data-theme='light']) .auth-input::placeholder {
-  color: #806b58;
-}
-
 @keyframes float-orb {
   from { transform: translate3d(0, 0, 0) scale(1); }
   to { transform: translate3d(2rem, -1.5rem, 0) scale(1.08); }
@@ -1813,12 +1760,6 @@ onMounted(async () => {
   }
 }
 
-:global([data-theme='light']) .shuffle-card,
-:global([data-theme='light']) .animated-card::before {
-  background:
-    radial-gradient(circle at 50% 42%, rgba(159, 90, 43, 0.22), transparent 36%),
-    linear-gradient(135deg, #8f4f2a, #c28a52);
-}
 
 @media (prefers-reduced-motion: reduce) {
   .shuffle-card,
@@ -2169,22 +2110,6 @@ onMounted(async () => {
     linear-gradient(135deg, rgba(125, 76, 255, 0.16), rgba(186, 123, 50, 0.1));
 }
 
-:global([data-theme='light']) .interpretation-summary,
-:global([data-theme='light']) .interpretation-energy,
-:global([data-theme='light']) .interpretation-block,
-:global([data-theme='light']) .next-step {
-  background: #fff8f0;
-  border-color: #e3c6a7;
-}
-
-:global([data-theme='light']) .interpretation-summary p,
-:global([data-theme='light']) .interpretation-energy p,
-:global([data-theme='light']) .interpretation-block p,
-:global([data-theme='light']) .next-step p,
-:global([data-theme='light']) .interpretation-block li {
-  color: #3d3126;
-}
-
 @keyframes interpretation-pulse {
   from { transform: scale(0.92) rotate(0deg); opacity: 0.78; }
   to { transform: scale(1.06) rotate(18deg); opacity: 1; }
@@ -2274,17 +2199,6 @@ onMounted(async () => {
 .share-panel-leave-to {
   opacity: 0;
   transform: translateY(10px);
-}
-
-:global([data-theme='light']) .share-result {
-  background: #fff8f0;
-  border-color: #e3c6a7;
-}
-
-:global([data-theme='light']) .share-url {
-  background: #fffdf8;
-  color: #2d2418;
-  border-color: #d7bd92;
 }
 
 @media (max-width: 820px) {

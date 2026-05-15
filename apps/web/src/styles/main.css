@@ -14,21 +14,6 @@
   font-family: 'Montserrat', 'Avenir Next', 'Trebuchet MS', sans-serif;
 }
 
-[data-theme='light'] {
-  color-scheme: light;
-  --bg: #f5f0e4;
-  --ink: #2d2418;
-  --muted: #746451;
-  --panel: rgba(255, 250, 240, 0.92);
-  --panel-strong: rgba(255, 249, 237, 0.97);
-  --border: #dfcda8;
-  --gold: #9f5a2b;
-  --gold-strong: #c28a52;
-  --violet: #8a62d8;
-  --rose: #a95f8e;
-  --shadow: rgba(85, 54, 24, 0.12);
-}
-
 * { box-sizing: border-box; }
 
 html {
@@ -46,10 +31,6 @@ body {
     linear-gradient(135deg, #080611 0%, #120d25 46%, #211132 100%);
   color: var(--ink);
   overflow-x: hidden;
-}
-
-[data-theme='light'] body {
-  background: radial-gradient(circle at top, #fff4db 0%, #f2ead6 55%, #e8dcc2 100%);
 }
 
 body::before,
@@ -78,12 +59,6 @@ body::after {
   filter: blur(14px);
   opacity: 0.75;
   animation: aura-spin 28s ease-in-out infinite alternate;
-}
-
-[data-theme='light'] body::before,
-[data-theme='light'] body::after {
-  opacity: 0;
-  animation: none;
 }
 
 button,
