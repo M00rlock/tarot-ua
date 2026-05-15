@@ -569,8 +569,35 @@ onMounted(async () => {
 }
 
 .hero {
+  position: relative;
+  overflow: hidden;
+
+  max-width: 1100px;
+  margin-inline: auto;
+
+  padding:
+    clamp(3rem, 8vw, 7rem)
+    clamp(1.25rem, 5vw, 4rem);
+
+  border-radius: 32px;
   padding: 1.5rem;
   background: linear-gradient(135deg, #fff9ed 0%, #f4e0bd 100%);
+}
+
+.hero::after {
+  content: '';
+
+  position: absolute;
+  inset: 0;
+
+  background:
+    radial-gradient(
+      circle at top,
+      rgba(255,255,255,0.04),
+      transparent 42%
+    );
+
+  pointer-events: none;
 }
 
 .panel {
@@ -593,8 +620,33 @@ onMounted(async () => {
 }
 
 .hero h1 {
-  margin-bottom: 0.35rem;
-  font-size: clamp(1.9rem, 4vw, 3rem);
+  max-width: 10ch;
+
+  margin:
+    0 auto
+    1.25rem;
+
+  font-size: clamp(3.2rem, 9vw, 6.5rem);
+
+  line-height: 0.92;
+
+  letter-spacing: -0.06em;
+
+  text-wrap: balance;
+}
+
+.subtitle {
+  max-width: 720px;
+
+  margin:
+    0 auto
+    2rem;
+
+  font-size: clamp(1.05rem, 2vw, 1.22rem);
+
+  line-height: 1.7;
+
+  color: var(--muted);
 }
 
 .subtitle,
@@ -1385,6 +1437,7 @@ onMounted(async () => {
   filter: blur(28px);
   opacity: 0.42;
   animation: float-orb 12s ease-in-out infinite alternate;
+  filter: blur(72px);
 }
 
 .orb-one {
@@ -1783,15 +1836,35 @@ onMounted(async () => {
 
 .hero-actions {
   display: flex;
-  gap: 0.9rem;
   flex-wrap: wrap;
+  justify-content: center;
   align-items: center;
-  margin-top: 1.35rem;
+
+  gap: 1rem;
 }
 
 .btn-large {
-  padding: 0.95rem 1.35rem;
+  min-height: 58px;
+
+  padding:
+    0.95rem
+    1.5rem;
+
+  border-radius: 999px;
+
   font-size: 1rem;
+  font-weight: 800;
+
+  transition:
+    transform .22s ease,
+    box-shadow .22s ease;
+}
+
+.btn-large:hover {
+  transform: translateY(-2px);
+
+  box-shadow:
+    0 14px 34px rgba(140, 104, 255, 0.22);
 }
 
 .hero-hint {
