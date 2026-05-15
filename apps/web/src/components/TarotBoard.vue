@@ -2,6 +2,7 @@
   <main class="page">
     <div class="ambient-orb orb-one" aria-hidden="true"></div>
     <div class="ambient-orb orb-two" aria-hidden="true"></div>
+
     <header class="hero hero-ritual">
       <div class="hero-top">
         <p class="eyebrow">Пет-проєкт для портфоліо</p>
@@ -15,284 +16,90 @@
       </div>
     </header>
 
-    <section class="panel auth-panel">
-      <div v-if="!currentUser" class="auth-card">
-        <div>
-          <p class="eyebrow">Cloud sync</p>
-          <h2>{{ authMode === 'login' ? 'Увійти в кабінет' : 'Створити кабінет' }}</h2>
-          <p class="muted">JWT-сесія, PostgreSQL-історія, обране та premium-ready профіль.</p>
-        </div>
-        <div class="auth-grid">
-          <input v-if="authMode === 'register'" v-model="authForm.name" class="auth-input" placeholder="Ваше ім’я" />
-          <input v-model="authForm.email" class="auth-input" placeholder="Email" autocomplete="email" />
-          <input v-model="authForm.password" class="auth-input" placeholder="Пароль" type="password" autocomplete="current-password" @keyup.enter="submitAuth" />
-          <button class="btn" :disabled="authLoading" @click="submitAuth">{{ authMode === 'login' ? 'Увійти' : 'Зареєструватись' }}</button>
-          <button class="btn btn-ghost" type="button" @click="toggleAuthMode">{{ authMode === 'login' ? 'Створити акаунт' : 'Вже маю акаунт' }}</button>
-        </div>
-      </div>
+    <AuthPanel
+      v-model:form="authForm"
+      :user="currentUser"
+      :mode="authMode"
+      :loading="authLoading"
+      @submit="submitAuth"
+      @toggle-mode="toggleAuthMode"
+      @logout="logout"
+    />
 
-      <div v-else class="auth-user">
-        <div>✨ Привіт, <strong>{{ currentUser.name }}</strong> <span class="premium-pill">{{ currentUser.premiumTier === 'premium' ? 'Premium' : 'Free' }}</span></div>
-        <button class="btn btn-secondary" @click="logout">Вийти</button>
-      </div>
-    </section>
+    <RitualSelector
+      ref="ritualSection"
+      :definitions="spreadDefinitions"
+      :active-type="activeSpreadType"
+      :collapsed="selectorCollapsed"
+      :loading="loading"
+      @choose="chooseSpread"
+      @expand="selectorCollapsed = false"
+    />
 
-    <section ref="ritualSection" class="panel controls-panel ritual-panel" :class="{ collapsed: selectorCollapsed }">
-      <div class="ritual-head">
-        <div>
-          <p class="eyebrow">Вибір ритуалу</p>
-          <h2>Який розклад вас кличе?</h2>
-          <p class="muted">Спочатку оберіть сценарій, далі сторінка сама переведе фокус до карт.</p>
-        </div>
-        <button v-if="selectorCollapsed" class="btn btn-ghost" type="button" @click="selectorCollapsed = false">Змінити розклад</button>
-      </div>
+    <CardOfDayPanel
+      :card="cardOfDay"
+      :today-label="todayLabel"
+      :error="error"
+      @image-error="setPlaceholderImage"
+    />
 
-      <Transition name="ritual-collapse">
-        <div v-if="!selectorCollapsed" class="spread-selector spread-selector-v2">
-          <button
-            v-for="definition in spreadDefinitions"
-            :key="definition.id"
-            class="spread-button spread-choice"
-            :class="{ active: activeSpreadType === definition.id }"
-            :disabled="loading"
-            @click="chooseSpread(definition.id)"
-          >
-            <span class="choice-icon">{{ spreadMeta(definition.id).icon }}</span>
-            <span class="choice-body">
-              <strong>{{ definition.title }}</strong>
-              <small>{{ spreadMeta(definition.id).description }}</small>
-              <em>{{ definition.count }} карти</em>
-            </span>
-          </button>
-        </div>
-      </Transition>
+    <SpreadBoard
+      ref="boardSection"
+      :spread="spread"
+      :active-definition="activeSpreadDefinition"
+      :loading="loading"
+      :reveal-key="revealKey"
+      :board-pulse="boardPulse"
+      :copy-status="copyStatus"
+      :share-loading="shareLoading"
+      @favorite="saveFavoriteSpread"
+      @copy="copySpreadText"
+      @share="shareCurrentSpread"
+      @image-error="setPlaceholderImage"
+    />
 
-      <div v-if="selectorCollapsed && activeSpreadDefinition" class="active-ritual-summary">
-        <span>{{ spreadMeta(activeSpreadDefinition.id).icon }}</span>
-        <div>
-          <strong>{{ activeSpreadDefinition.title }}</strong>
-          <small>{{ spreadMeta(activeSpreadDefinition.id).description }}</small>
-        </div>
-      </div>
-    </section>
+    <SharePanel
+      :share-result="shareResult"
+      :preview-url="sharePreviewUrl"
+      @copy-url="copyShareUrl"
+      @native-share="nativeShare"
+      @select-url="selectShareUrl"
+    />
 
-    <section class="panel">
-      <h2>Карта дня</h2>
-      <p class="muted">{{ todayLabel }}</p>
-      <p v-if="error" class="error">{{ error }}</p>
+    <InterpretationPanel
+      :has-spread="Boolean(spread.length)"
+      :interpretation="interpretation"
+      :loading="interpretationLoading"
+      :tone="interpretationTone"
+      :tones="interpretationTones"
+      @set-tone="setInterpretationTone"
+    />
 
-      <article v-if="cardOfDay" class="card-day">
-        <img class="card-image" :class="{ 'is-reversed': cardOfDay.reversed }" :src="cardOfDay.card.image" :alt="cardOfDay.card.name" loading="lazy" @error="setPlaceholderImage" />
-        <div>
-          <p class="position">{{ cardOfDay.position }}</p>
-          <h3>{{ cardOfDay.card.name }} <span v-if="cardOfDay.reversed">(перевернута)</span></h3>
-          <p class="position-hint">{{ cardOfDay.positionDescription }}</p>
-          <p class="keywords">{{ cardOfDay.card.keywords.join(' · ') }}</p>
-          <p>{{ cardMeaning(cardOfDay) }}</p>
-        </div>
-      </article>
-    </section>
+    <StoredSpreadsList title="Обрані розклади" :items="favoriteSpreads" />
+    <StoredSpreadsList title="Історія розкладів" :items="spreadHistory" />
 
-    <section ref="boardSection" class="panel board-panel" :class="{ 'board-focus': boardPulse }">
-      <div class="section-head">
-        <div>
-          <p class="eyebrow">Розкриття карт</p>
-          <h2>Поточний розклад</h2>
-          <p class="muted" v-if="activeSpreadDefinition">{{ activeSpreadDefinition.title }}</p>
-        </div>
-        <div class="section-actions" v-if="spread.length">
-          <button class="btn btn-secondary" @click="saveFavoriteSpread">★ В обране</button>
-          <button class="btn btn-ghost" @click="copySpreadText">Копіювати текст</button>
-          <button class="btn btn-share" :disabled="shareLoading" @click="shareCurrentSpread">📸 Поділитись</button>
-        </div>
-      </div>
-
-      <div v-if="loading" class="shuffle-stage" aria-live="polite">
-        <div class="shuffle-stack" aria-hidden="true">
-          <span v-for="n in 5" :key="n" class="shuffle-card" :style="{ '--shuffle-index': n - 1 }"></span>
-        </div>
-        <p class="muted">Перемішую колоду...</p>
-      </div>
-
-      <div v-else-if="spread.length === 3" class="spread-grid-3">
-        <article v-for="(item, index) in spread" :key="`${item.position}-${item.card.id}-${revealKey}`" class="card-item" :style="revealStyle(index)">
-          <div class="card-visual animated-card">
-            <img class="card-image" :class="{ 'is-reversed': item.reversed }" :src="item.card.image" :alt="item.card.name" loading="lazy" @error="setPlaceholderImage" />
-            <span v-if="item.reversed" class="reversed-badge">↻ перевернута</span>
-          </div>
-          <p class="position">{{ item.position }}</p>
-          <p class="position-hint">{{ item.positionDescription }}</p>
-          <h3>{{ item.card.name }}</h3>
-          <p class="keywords">{{ item.card.keywords.join(' · ') }}</p>
-          <p class="meaning">{{ cardMeaning(item) }}</p>
-        </article>
-      </div>
-
-      <div v-else-if="spread.length === 5" class="spread-layout-clean">
-        <div class="spread-board-clean" aria-label="Пентаграма розкладу">
-          <article v-for="(item, index) in spread" :key="`board-${item.position}-${item.card.id}-${revealKey}`" class="board-slot" :class="`position-${index}`" :style="revealStyle(index)">
-            <div class="board-card-frame animated-card">
-              <img class="board-card-image" :class="{ 'is-reversed': item.reversed }" :src="item.card.image" :alt="item.card.name" loading="lazy" @error="setPlaceholderImage" />
-              <span v-if="item.reversed" class="board-reversed">↻</span>
-            </div>
-            <div class="board-caption">
-              <strong>{{ index + 1 }}. {{ item.position }}</strong>
-              <span>{{ item.card.name }}</span>
-            </div>
-          </article>
-        </div>
-
-        <div class="spread-details-clean">
-          <article v-for="(item, index) in spread" :key="`details-${item.position}-${item.card.id}-${revealKey}`" class="detail-row reveal-detail" :style="detailRevealStyle(index)">
-            <span class="detail-number">{{ index + 1 }}</span>
-            <div>
-              <p class="position">{{ item.position }} <span v-if="item.reversed" class="inline-reversed">/ перевернута</span></p>
-              <p class="position-hint">{{ item.positionDescription }}</p>
-              <h3>{{ item.card.name }}</h3>
-              <p class="keywords">{{ item.card.keywords.join(' · ') }}</p>
-              <p class="meaning">{{ cardMeaning(item) }}</p>
-            </div>
-          </article>
-        </div>
-      </div>
-
-      <p v-else class="muted">Обери тип розкладу й натисни кнопку.</p>
-      <p v-if="copyStatus" class="success">{{ copyStatus }}</p>
-
-      <Transition name="share-panel">
-        <aside v-if="shareResult" class="share-result" aria-live="polite">
-          <div class="share-copy">
-            <p class="eyebrow">Публічний розклад</p>
-            <h3>Готово до поширення</h3>
-            <p class="muted">Створено short URL, social card і PNG preview для месенджерів або соцмереж.</p>
-            <div class="share-url-row">
-              <input class="share-url" :value="shareResult.url" readonly @focus="selectShareUrl" />
-              <button class="btn btn-secondary" @click="copyShareUrl">Копіювати URL</button>
-            </div>
-            <div class="share-actions">
-              <button class="btn btn-ghost" @click="nativeShare">Системно поділитись</button>
-              <a v-if="sharePreviewUrl" class="btn btn-ghost share-download" :href="sharePreviewUrl" download="tarot-spread.png">Завантажити PNG</a>
-              <a class="btn btn-ghost share-download" :href="shareResult.social.imageUrl" target="_blank" rel="noreferrer">Social card SVG</a>
-            </div>
-          </div>
-          <img v-if="sharePreviewUrl" class="share-preview" :src="sharePreviewUrl" alt="Превʼю розкладу для поширення" />
-        </aside>
-      </Transition>
-    </section>
-
-    <section v-if="spread.length" class="panel interpretation-panel">
-      <div class="section-head interpretation-head">
-        <div>
-          <p class="eyebrow">AI-тлумачення</p>
-          <h2>Цілісне прочитання розкладу</h2>
-          <p class="muted">Не просто значення карт окремо — а зв’язки, напруга, порада й наступний крок.</p>
-        </div>
-        <div class="tone-switcher" aria-label="Тон тлумачення">
-          <button
-            v-for="tone in interpretationTones"
-            :key="tone.value"
-            class="tone-button"
-            :class="{ active: interpretationTone === tone.value }"
-            type="button"
-            :disabled="interpretationLoading"
-            @click="setInterpretationTone(tone.value)"
-          >
-            {{ tone.label }}
-          </button>
-        </div>
-      </div>
-
-      <div v-if="interpretationLoading" class="interpretation-loading">
-        <span class="spinner-orb" aria-hidden="true"></span>
-        <p>Зчитую взаємодію карт...</p>
-      </div>
-
-      <article v-else-if="interpretation" class="interpretation-card">
-        <div class="interpretation-summary">
-          <h3>{{ interpretation.title }}</h3>
-          <p>{{ interpretation.summary }}</p>
-        </div>
-
-        <div class="interpretation-energy">
-          <strong>Загальна енергія</strong>
-          <p>{{ interpretation.energy }}</p>
-        </div>
-
-        <div v-if="interpretation.interactions.length" class="interpretation-block">
-          <h3>Взаємодія карт</h3>
-          <ul>
-            <li v-for="item in interpretation.interactions" :key="item">{{ item }}</li>
-          </ul>
-        </div>
-
-        <div class="interpretation-grid">
-          <div class="interpretation-block">
-            <h3>Порада</h3>
-            <ul>
-              <li v-for="item in interpretation.advice" :key="item">{{ item }}</li>
-            </ul>
-          </div>
-          <div class="interpretation-block">
-            <h3>Тінь</h3>
-            <p>{{ interpretation.shadow }}</p>
-          </div>
-        </div>
-
-        <div class="next-step">
-          <strong>Наступний крок</strong>
-          <p>{{ interpretation.nextStep }}</p>
-        </div>
-      </article>
-    </section>
-
-    <section v-if="favoriteSpreads.length" class="panel">
-      <h2>Обрані розклади</h2>
-      <div class="history-list">
-        <article v-for="entry in favoriteSpreads" :key="entry.id" class="history-item">
-          <div class="history-head">
-            <strong>{{ entry.title }}</strong>
-            <span>{{ entry.date }}</span>
-          </div>
-          <div class="history-cards">
-            <span v-for="card in entry.cards" :key="card">{{ card }}</span>
-          </div>
-        </article>
-      </div>
-    </section>
-
-    <section v-if="spreadHistory.length" class="panel">
-      <h2>Історія розкладів</h2>
-      <div class="history-list">
-        <article v-for="entry in spreadHistory" :key="entry.id" class="history-item">
-          <div class="history-head">
-            <strong>{{ entry.title }}</strong>
-            <span>{{ entry.date }}</span>
-          </div>
-          <div class="history-cards">
-            <span v-for="card in entry.cards" :key="card">{{ card }}</span>
-          </div>
-        </article>
-      </div>
-    </section>
-
-    <section class="panel">
-      <h2>Колода ({{ cards.length }} карт)</h2>
-      <ul class="deck-list">
-        <li v-for="card in cards" :key="card.id">
-          <img class="deck-thumb" :src="card.image" :alt="card.name" loading="lazy" @error="setPlaceholderImage" />
-          <div>
-            <strong>{{ card.name }}</strong>
-            <span>{{ card.keywords.join(', ') }}</span>
-          </div>
-        </li>
-      </ul>
-    </section>
+    <DeckPanel
+      :cards="cards"
+      :show-deck="showDeck"
+      :loading="deckLoading"
+      @toggle="toggleDeck"
+      @image-error="setPlaceholderImage"
+    />
   </main>
 </template>
 
 <script setup lang="ts">
 import { computed, nextTick, onMounted, ref } from 'vue';
+import AuthPanel from './AuthPanel.vue';
+import CardOfDayPanel from './CardOfDayPanel.vue';
+import DeckPanel from './DeckPanel.vue';
+import InterpretationPanel from './InterpretationPanel.vue';
+import RitualSelector from './RitualSelector.vue';
+import SharePanel from './SharePanel.vue';
+import SpreadBoard from './SpreadBoard.vue';
+import StoredSpreadsList from './StoredSpreadsList.vue';
 import { clearAccessToken, createShareableSpread, drawSpread, fetchCardOfDay, fetchCards, fetchCloudSpreads, fetchProfile, fetchSharedSpread, fetchSpreadDefinitions, fetchSpreadInterpretation, getAccessToken, loginUser, registerUser, saveCloudSpread } from '../services/api';
+import { buildSharePreview } from '../sharePreview';
 import { cardMeaning } from '../utils';
 import type { AuthUser, CloudSpread, DrawnCard, InterpretationTone, SharedSpread, SpreadDefinition, SpreadInterpretation, SpreadType, TarotCard } from '../types';
 
@@ -304,6 +111,8 @@ interface StoredSpread {
 }
 
 const cards = ref<TarotCard[]>([]);
+const showDeck = ref(false);
+const deckLoading = ref(false);
 const spread = ref<DrawnCard[]>([]);
 const spreadDefinitions = ref<SpreadDefinition[]>([]);
 const activeSpreadType = ref<SpreadType>('classic3');
@@ -339,26 +148,15 @@ const interpretationTones: Array<{ value: InterpretationTone; label: string }> =
   { value: 'practical', label: 'Практично' }
 ];
 
-const spreadMetaMap: Record<SpreadType, { icon: string; description: string }> = {
-  classic3: { icon: '✦', description: 'Минуле, теперішнє і найближчий напрямок.' },
-  pentagram5: { icon: '⛤', description: 'Глибокий огляд ситуації через п’ять позицій.' },
-  love5: { icon: '♡', description: 'Емоції, зв’язок, тінь і можливий розвиток.' },
-  career5: { icon: '♜', description: 'Фокус, ресурси, перешкоди й наступний крок.' }
-};
-
-function spreadMeta(type: SpreadType) {
-  return spreadMetaMap[type];
-}
-
 function scrollToRitual() {
-  ritualSection.value?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  ritualSection.value?.scrollIntoView();
 }
 
 async function chooseSpread(type: SpreadType) {
   selectorCollapsed.value = true;
   await refreshSpread(type);
   await nextTick();
-  boardSection.value?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  boardSection.value?.scrollIntoView();
   boardPulse.value = true;
   window.setTimeout(() => {
     boardPulse.value = false;
@@ -405,7 +203,21 @@ async function syncUserLists() {
 }
 
 async function loadCards() {
-  cards.value = await fetchCards(78);
+  if (cards.value.length || deckLoading.value) return;
+
+  deckLoading.value = true;
+  try {
+    cards.value = await fetchCards(78);
+  } finally {
+    deckLoading.value = false;
+  }
+}
+
+async function toggleDeck() {
+  showDeck.value = !showDeck.value;
+  if (showDeck.value) {
+    await loadCards();
+  }
 }
 
 async function loadSpreadDefinitions() {
@@ -456,13 +268,6 @@ function delay(ms: number) {
   return new Promise((resolve) => window.setTimeout(resolve, ms));
 }
 
-function revealStyle(index: number) {
-  return { '--reveal-delay': `${index * 140}ms` };
-}
-
-function detailRevealStyle(index: number) {
-  return { '--reveal-delay': `${520 + index * 95}ms` };
-}
 
 async function generateInterpretation() {
   if (!spread.value.length) return;
@@ -614,159 +419,6 @@ async function nativeShare() {
   await copyShareUrl();
 }
 
-async function buildSharePreview(shared: SharedSpread) {
-  const canvas = document.createElement('canvas');
-  canvas.width = 1200;
-  canvas.height = 630;
-  const ctx = canvas.getContext('2d');
-  if (!ctx) return '';
-
-  const gradient = ctx.createLinearGradient(0, 0, 1200, 630);
-  gradient.addColorStop(0, '#110b22');
-  gradient.addColorStop(0.52, '#281638');
-  gradient.addColorStop(1, '#120d1f');
-  ctx.fillStyle = gradient;
-  ctx.fillRect(0, 0, 1200, 630);
-
-  const orb = ctx.createRadialGradient(610, 280, 30, 610, 280, 520);
-  orb.addColorStop(0, 'rgba(140,104,255,0.42)');
-  orb.addColorStop(0.55, 'rgba(230,182,106,0.14)');
-  orb.addColorStop(1, 'rgba(0,0,0,0)');
-  ctx.fillStyle = orb;
-  ctx.fillRect(0, 0, 1200, 630);
-
-  drawStars(ctx);
-  drawPreviewText(ctx, shared.title, shared.interpretation?.summary || 'Розклад Таро з цілісним тлумаченням карт, позицій і взаємодій.');
-  drawPreviewCards(ctx, shared.cards);
-
-  return canvas.toDataURL('image/png');
-}
-
-function drawStars(ctx: CanvasRenderingContext2D) {
-  const stars = [
-    [150, 120], [245, 72], [1030, 92], [980, 510], [1080, 420], [92, 500], [650, 96], [780, 545]
-  ];
-
-  ctx.fillStyle = 'rgba(244,211,139,0.78)';
-  for (const [x, y] of stars) {
-    ctx.beginPath();
-    ctx.arc(x, y, 2.2, 0, Math.PI * 2);
-    ctx.fill();
-  }
-}
-
-function drawPreviewText(ctx: CanvasRenderingContext2D, title: string, summary: string) {
-  ctx.fillStyle = '#f4d38b';
-  ctx.font = '800 24px Inter, Arial, sans-serif';
-  ctx.fillText('ТАРО ЧЕРІОТ', 80, 88);
-
-  ctx.fillStyle = '#fff8e7';
-  ctx.font = '900 52px Inter, Arial, sans-serif';
-  wrapCanvasText(ctx, title, 80, 154, 880, 58, 2);
-
-  ctx.fillStyle = 'rgba(255,248,231,0.82)';
-  ctx.font = '400 23px Inter, Arial, sans-serif';
-  wrapCanvasText(ctx, summary, 80, 210, 880, 32, 2);
-}
-
-function drawPreviewCards(ctx: CanvasRenderingContext2D, cards: DrawnCard[]) {
-  const shown = cards.slice(0, 5);
-  const startX = shown.length === 3 ? 255 : 135;
-  const gap = shown.length === 3 ? 230 : 186;
-
-  shown.forEach((item, index) => {
-    const x = startX + index * gap;
-    const y = 280;
-    const cardGradient = ctx.createLinearGradient(x, y, x + 132, y + 214);
-    cardGradient.addColorStop(0, '#241739');
-    cardGradient.addColorStop(1, '#6d3f77');
-
-    roundRect(ctx, x, y, 132, 214, 18);
-    ctx.fillStyle = cardGradient;
-    ctx.fill();
-    ctx.strokeStyle = 'rgba(244,211,139,0.58)';
-    ctx.lineWidth = 2;
-    ctx.stroke();
-
-    ctx.strokeStyle = 'rgba(244,211,139,0.55)';
-    ctx.beginPath();
-    ctx.arc(x + 66, y + 76, 34, 0, Math.PI * 2);
-    ctx.stroke();
-
-    ctx.fillStyle = '#f4d38b';
-    ctx.font = '34px Inter, Arial, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('✦', x + 66, y + 91);
-
-    ctx.fillStyle = '#fff8e7';
-    ctx.font = '800 18px Inter, Arial, sans-serif';
-    ctx.fillText(String(index + 1), x + 66, y + 142);
-
-    ctx.fillStyle = '#f4d38b';
-    ctx.font = '700 13px Inter, Arial, sans-serif';
-    ctx.fillText(item.position.slice(0, 18), x + 66, y + 174);
-
-    ctx.fillStyle = '#fff8e7';
-    ctx.font = '700 12px Inter, Arial, sans-serif';
-    wrapCanvasText(ctx, `${item.reversed ? '↻ ' : ''}${item.card.name}`, x + 14, y + 194, 104, 16, 2, 'center');
-    ctx.textAlign = 'start';
-  });
-
-  ctx.fillStyle = '#f4d38b';
-  ctx.font = '800 22px Inter, Arial, sans-serif';
-  ctx.fillText('Поділись своїм розкладом ✦', 80, 560);
-
-  ctx.fillStyle = 'rgba(255,248,231,0.72)';
-  ctx.font = '400 18px Inter, Arial, sans-serif';
-  wrapCanvasText(ctx, cards.map((item) => item.card.name).join(' · '), 80, 594, 1040, 24, 1);
-}
-
-function wrapCanvasText(
-  ctx: CanvasRenderingContext2D,
-  text: string,
-  x: number,
-  y: number,
-  maxWidth: number,
-  lineHeight: number,
-  maxLines = 3,
-  align: CanvasTextAlign = 'start'
-) {
-  const words = text.split(' ');
-  let line = '';
-  let lineCount = 0;
-  const previousAlign = ctx.textAlign;
-  ctx.textAlign = align;
-  const drawX = align === 'center' ? x + maxWidth / 2 : x;
-
-  for (let i = 0; i < words.length; i += 1) {
-    const testLine = `${line}${words[i]} `;
-    if (ctx.measureText(testLine).width > maxWidth && i > 0) {
-      ctx.fillText(line.trim(), drawX, y + lineCount * lineHeight);
-      line = `${words[i]} `;
-      lineCount += 1;
-      if (lineCount >= maxLines) break;
-    } else {
-      line = testLine;
-    }
-  }
-
-  if (lineCount < maxLines && line.trim()) {
-    ctx.fillText(line.trim(), drawX, y + lineCount * lineHeight);
-  }
-
-  ctx.textAlign = previousAlign;
-}
-
-function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number, radius: number) {
-  ctx.beginPath();
-  ctx.moveTo(x + radius, y);
-  ctx.arcTo(x + width, y, x + width, y + height, radius);
-  ctx.arcTo(x + width, y + height, x, y + height, radius);
-  ctx.arcTo(x, y + height, x, y, radius);
-  ctx.arcTo(x, y, x + width, y, radius);
-  ctx.closePath();
-}
-
 async function loadSharedView(slug: string) {
   const shared = await fetchSharedSpread(slug);
   isSharedView.value = true;
@@ -814,7 +466,7 @@ onMounted(async () => {
       }
     }
 
-    await Promise.all([loadCards(), loadCardOfDay(), loadSpreadDefinitions()]);
+    await Promise.all([loadCardOfDay(), loadSpreadDefinitions()]);
 
     const sharedMatch = window.location.pathname.match(/^\/share\/([A-Za-z0-9_-]+)/);
     if (sharedMatch?.[1]) {
@@ -829,7 +481,7 @@ onMounted(async () => {
 });
 </script>
 
-<style scoped>
+<style>
 .page {
   max-width: 1080px;
   margin: 0 auto;
@@ -853,6 +505,8 @@ onMounted(async () => {
 
 .panel {
   padding: 1.15rem;
+  content-visibility: auto;
+  contain-intrinsic-size: auto 520px;
 }
 
 .eyebrow {
@@ -1977,7 +1631,6 @@ onMounted(async () => {
   transform-style: preserve-3d;
   animation: tarot-flip-reveal 780ms cubic-bezier(0.2, 0.75, 0.2, 1) both;
   animation-delay: var(--reveal-delay, 0ms);
-  will-change: transform, opacity, filter;
 }
 
 .animated-card::before {
@@ -2195,6 +1848,8 @@ onMounted(async () => {
 .choice-body {
   display: grid;
   gap: 0.32rem;
+  min-width: 0;
+  align-self: stretch;
 }
 
 .choice-body strong {
@@ -2210,7 +1865,12 @@ onMounted(async () => {
 
 .choice-body em {
   width: max-content;
-  margin-top: 0.2rem;
+  max-width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  margin-top: auto;
   padding: 0.25rem 0.5rem;
   border-radius: 999px;
   color: var(--gold-strong);

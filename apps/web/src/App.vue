@@ -5,10 +5,11 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
-import TarotBoard from './components/TarotBoard.vue';
-import SeoCardPage from './pages/SeoCardPage.vue';
-import SeoSpreadPage from './pages/SeoSpreadPage.vue';
+import { computed, defineAsyncComponent } from 'vue';
+
+const TarotBoard = defineAsyncComponent(() => import('./components/TarotBoard.vue'));
+const SeoCardPage = defineAsyncComponent(() => import('./pages/SeoCardPage.vue'));
+const SeoSpreadPage = defineAsyncComponent(() => import('./pages/SeoSpreadPage.vue'));
 
 const route = computed(() => {
   const path = window.location.pathname;
