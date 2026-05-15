@@ -1,7 +1,12 @@
 <template>
   <main class="page">
+    <div class="ambient-orb orb-one" aria-hidden="true"></div>
+    <div class="ambient-orb orb-two" aria-hidden="true"></div>
     <header class="hero">
-      <p class="eyebrow">Пет-проєкт для портфоліо</p>
+      <div class="hero-top">
+        <p class="eyebrow">Пет-проєкт для портфоліо</p>
+        <button class="theme-toggle" type="button" @click="toggleTheme">{{ theme === 'dark' ? '☀️ Світла тема' : '🌙 Mystic тема' }}</button>
+      </div>
       <h1>Таро Черіот</h1>
       <p class="subtitle">Vue + NestJS + JanusGraph. Онлайн-розклади, карта дня та персональна історія.</p>
     </header>
@@ -182,6 +187,7 @@ const loading = ref(false);
 const error = ref('');
 const copyStatus = ref('');
 const currentUser = ref(localStorage.getItem('tarot-user') || '');
+const theme = ref<'dark' | 'light'>((localStorage.getItem('tarot-theme') as 'dark' | 'light') || 'dark');
 const authForm = ref({ name: '' });
 const spreadHistory = ref<StoredSpread[]>(loadUserList('history'));
 const favoriteSpreads = ref<StoredSpread[]>(loadUserList('favorites'));
@@ -191,6 +197,16 @@ const activeSpreadDefinition = computed(() => spreadDefinitions.value.find((item
 const todayLabel = new Intl.DateTimeFormat('uk-UA', {
   dateStyle: 'full'
 }).format(new Date());
+
+function applyTheme() {
+  document.documentElement.dataset.theme = theme.value;
+  localStorage.setItem('tarot-theme', theme.value);
+}
+
+function toggleTheme() {
+  theme.value = theme.value === 'dark' ? 'light' : 'dark';
+  applyTheme();
+}
 
 function storageKey(kind: 'history' | 'favorites') {
   return `tarot-${kind}-${currentUser.value}`;
@@ -314,6 +330,8 @@ async function copySpreadText() {
 }
 
 onMounted(async () => {
+  applyTheme();
+
   try {
     await Promise.all([loadCards(), loadCardOfDay(), loadSpreadDefinitions()]);
     await refreshSpread('classic3');
@@ -1100,6 +1118,285 @@ onMounted(async () => {
 
   .board-caption strong { font-size: 0.54rem; }
   .board-caption span { font-size: 0.64rem; }
+}
+
+
+/* Mystic theme layer */
+.page {
+  position: relative;
+  isolation: isolate;
+}
+
+.ambient-orb {
+  position: fixed;
+  z-index: -1;
+  width: 28rem;
+  height: 28rem;
+  border-radius: 999px;
+  pointer-events: none;
+  filter: blur(28px);
+  opacity: 0.42;
+  animation: float-orb 12s ease-in-out infinite alternate;
+}
+
+.orb-one {
+  left: -10rem;
+  top: 8rem;
+  background: radial-gradient(circle, rgba(140, 104, 255, 0.5), transparent 68%);
+}
+
+.orb-two {
+  right: -12rem;
+  bottom: 4rem;
+  background: radial-gradient(circle, rgba(230, 182, 106, 0.32), transparent 70%);
+  animation-delay: -4s;
+}
+
+.hero,
+.panel {
+  position: relative;
+  overflow: hidden;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.025)),
+    var(--panel);
+  border-color: var(--border);
+  box-shadow:
+    0 22px 70px var(--shadow),
+    inset 0 1px 0 rgba(255, 255, 255, 0.11);
+  backdrop-filter: blur(18px) saturate(1.1);
+}
+
+.hero::before,
+.panel::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 12% 8%, rgba(230, 182, 106, 0.16), transparent 18rem),
+    radial-gradient(circle at 92% 10%, rgba(140, 104, 255, 0.15), transparent 16rem);
+  opacity: 0.8;
+}
+
+.hero > *,
+.panel > * {
+  position: relative;
+  z-index: 1;
+}
+
+.hero {
+  min-height: 210px;
+  padding: clamp(1.35rem, 3vw, 2.1rem);
+  background:
+    radial-gradient(circle at 16% 18%, rgba(230, 182, 106, 0.18), transparent 18rem),
+    radial-gradient(circle at 82% 10%, rgba(140, 104, 255, 0.2), transparent 18rem),
+    linear-gradient(135deg, rgba(28, 18, 45, 0.92), rgba(43, 22, 58, 0.84));
+}
+
+.hero-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: center;
+  margin-bottom: 0.8rem;
+}
+
+.theme-toggle {
+  border: 1px solid rgba(230, 182, 106, 0.32);
+  border-radius: 999px;
+  padding: 0.55rem 0.85rem;
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.08);
+  cursor: pointer;
+  box-shadow: 0 0 22px rgba(230, 182, 106, 0.08);
+}
+
+.hero h1 {
+  color: var(--ink);
+  text-shadow: 0 0 30px rgba(230, 182, 106, 0.26);
+}
+
+.subtitle,
+.muted,
+.position,
+.position-hint,
+.deck-list span,
+.history-head span,
+.spread-button span,
+.board-caption strong {
+  color: var(--muted);
+}
+
+.eyebrow,
+.keywords,
+.inline-reversed {
+  color: var(--gold-strong);
+}
+
+.btn {
+  background: linear-gradient(135deg, #ba7b32, #7d4cff);
+  box-shadow: 0 10px 28px rgba(140, 104, 255, 0.26), 0 0 18px rgba(230, 182, 106, 0.12);
+}
+
+.btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #d69a4d, #9a76ff);
+}
+
+.btn-secondary {
+  background: linear-gradient(135deg, #a96a36, #c77ab0);
+}
+
+.btn-ghost {
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.09);
+  border: 1px solid rgba(230, 182, 106, 0.18);
+}
+
+.auth-input {
+  color: var(--ink);
+  border-color: rgba(230, 182, 106, 0.25);
+  background: rgba(8, 6, 17, 0.42);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.auth-input::placeholder {
+  color: rgba(247, 234, 216, 0.55);
+}
+
+.spread-button,
+.card-day,
+.card-item,
+.detail-row,
+.deck-list li,
+.history-item {
+  color: var(--ink);
+  border-color: rgba(230, 182, 106, 0.22);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.035)),
+    rgba(20, 14, 31, 0.68);
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.22);
+}
+
+.spread-button.active {
+  border-color: rgba(244, 211, 139, 0.78);
+  box-shadow: 0 0 0 3px rgba(230, 182, 106, 0.13), 0 0 30px rgba(140, 104, 255, 0.18);
+}
+
+.card-item h3,
+.detail-row h3,
+.board-caption span,
+.deck-list strong,
+.history-head strong,
+.auth-user strong {
+  color: var(--ink);
+}
+
+.meaning {
+  color: rgba(247, 234, 216, 0.88);
+}
+
+.card-image,
+.deck-thumb,
+.board-card-frame {
+  border-color: rgba(244, 211, 139, 0.35);
+  background: rgba(8, 6, 17, 0.35);
+  box-shadow:
+    0 14px 34px rgba(0, 0, 0, 0.3),
+    0 0 22px rgba(140, 104, 255, 0.14);
+}
+
+.spread-board-clean {
+  border-color: rgba(244, 211, 139, 0.24);
+  background:
+    radial-gradient(circle at 50% 42%, rgba(230, 182, 106, 0.16), transparent 30%),
+    radial-gradient(circle at 50% 54%, rgba(140, 104, 255, 0.18), transparent 42%),
+    linear-gradient(180deg, rgba(23, 15, 38, 0.92), rgba(13, 10, 25, 0.86));
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.08),
+    0 28px 70px rgba(0, 0, 0, 0.34),
+    0 0 55px rgba(140, 104, 255, 0.12);
+}
+
+.spread-board-clean::before {
+  border-color: rgba(244, 211, 139, 0.18);
+  box-shadow: 0 0 38px rgba(230, 182, 106, 0.08);
+}
+
+.spread-board-clean::after {
+  content: '';
+  position: absolute;
+  inset: 9% 16%;
+  pointer-events: none;
+  opacity: 0.4;
+  background:
+    linear-gradient(34deg, transparent 49.2%, rgba(230, 182, 106, 0.14) 49.8%, rgba(230, 182, 106, 0.14) 50.2%, transparent 50.8%),
+    linear-gradient(-34deg, transparent 49.2%, rgba(230, 182, 106, 0.11) 49.8%, rgba(230, 182, 106, 0.11) 50.2%, transparent 50.8%);
+}
+
+.board-card-frame:hover,
+.card-image:hover,
+.deck-thumb:hover {
+  box-shadow:
+    0 16px 36px rgba(0, 0, 0, 0.34),
+    0 0 32px rgba(230, 182, 106, 0.2),
+    0 0 24px rgba(140, 104, 255, 0.14);
+}
+
+.detail-number {
+  background: linear-gradient(135deg, #ba7b32, #7d4cff);
+  color: #fff9e8;
+}
+
+.history-cards span {
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(230, 182, 106, 0.14);
+}
+
+.error { color: #ff9a9a; }
+.success { color: #bdf2a1; }
+
+:global([data-theme='light']) .ambient-orb {
+  display: none;
+}
+
+:global([data-theme='light']) .hero,
+:global([data-theme='light']) .panel {
+  background: rgba(255, 250, 240, 0.92);
+  border-color: #dfcda8;
+  box-shadow: 0 18px 45px rgba(85, 54, 24, 0.08);
+  backdrop-filter: none;
+}
+
+:global([data-theme='light']) .hero {
+  background: linear-gradient(135deg, #fff9ed 0%, #f4e0bd 100%);
+}
+
+:global([data-theme='light']) .hero::before,
+:global([data-theme='light']) .panel::before,
+:global([data-theme='light']) .spread-board-clean::after {
+  display: none;
+}
+
+:global([data-theme='light']) .theme-toggle {
+  background: #fffaf0;
+  color: #2d2418;
+  border-color: #dfcda8;
+}
+
+:global([data-theme='light']) .auth-input {
+  background: #fffdf8;
+  color: #2d2418;
+  border-color: #d7bd92;
+}
+
+:global([data-theme='light']) .auth-input::placeholder {
+  color: #806b58;
+}
+
+@keyframes float-orb {
+  from { transform: translate3d(0, 0, 0) scale(1); }
+  to { transform: translate3d(2rem, -1.5rem, 0) scale(1.08); }
 }
 
 </style>
