@@ -1,10 +1,14 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import { TarotGraphService } from './tarot.graph.service';
+import { LlmInterpretationService } from './llm-interpretation.service';
 import { DrawnCard, InterpretationTone, SpreadDefinition, SpreadInterpretation, SpreadType, TarotCard } from './tarot.types';
 
 @Injectable()
 export class TarotService implements OnModuleInit {
-  constructor(private readonly graphService: TarotGraphService) {}
+  constructor(
+    private readonly graphService: TarotGraphService,
+    private readonly llmInterpretationService: LlmInterpretationService
+  ) {}
 
   async onModuleInit(): Promise<void> {
     await this.graphService.seedIfNeeded();
@@ -43,7 +47,16 @@ export class TarotService implements OnModuleInit {
   }
 
 
-  generateInterpretation(spread: DrawnCard[], spreadType: SpreadType = 'classic3', tone: InterpretationTone = 'psychological'): SpreadInterpretation {
+  async generateInterpretation(spread: DrawnCard[], spreadType: SpreadType = 'classic3', tone: InterpretationTone = 'psychological'): Promise<SpreadInterpretation> {
+    const fallback = this.generateRuleBasedInterpretation(spread, spreadType, tone);
+    if (!spread.length) return fallback;
+
+    const definition = this.resolveSpread(spread.length, spreadType);
+    const llm = await this.llmInterpretationService.generate({ spread, definition, tone: fallback.tone, fallback });
+    return llm ?? fallback;
+  }
+
+  generateRuleBasedInterpretation(spread: DrawnCard[], spreadType: SpreadType = 'classic3', tone: InterpretationTone = 'psychological'): SpreadInterpretation {
     if (!spread.length) {
       return {
         title: 'AI-тлумачення',
@@ -53,7 +66,8 @@ export class TarotService implements OnModuleInit {
         interactions: [],
         advice: [],
         shadow: 'Тіньова зона з’явиться після вибору карт.',
-        nextStep: 'Оберіть розклад і відкрийте карти.'
+        nextStep: 'Оберіть розклад і відкрийте карти.',
+        provider: 'rule-based'
       };
     }
 
@@ -79,7 +93,8 @@ export class TarotService implements OnModuleInit {
       interactions: this.buildInteractions(spread, normalizedTone),
       advice: this.buildAdvice(spread, normalizedTone),
       shadow: this.buildShadow(spread, normalizedTone),
-      nextStep: this.buildNextStep(focus, adviceCard, normalizedTone)
+      nextStep: this.buildNextStep(focus, adviceCard, normalizedTone),
+      provider: 'rule-based'
     };
   }
 

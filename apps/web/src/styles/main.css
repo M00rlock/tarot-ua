@@ -349,3 +349,17 @@ img {
     line-height: 1.62;
   }
 }
+
+.provider-pill {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 0.45rem;
+  padding: 0.16rem 0.5rem;
+  border: 1px solid rgba(245, 211, 127, 0.34);
+  border-radius: 999px;
+  color: var(--gold, #f5d37f);
+  background: rgba(245, 211, 127, 0.08);
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  vertical-align: middle;
+}

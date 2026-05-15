@@ -23,7 +23,7 @@ export class TarotController {
 
 
   @Post('interpretation')
-  interpret(@Body() body: { spread?: DrawnCard[]; type?: SpreadType; tone?: InterpretationTone }) {
+  async interpret(@Body() body: { spread?: DrawnCard[]; type?: SpreadType; tone?: InterpretationTone }) {
     return this.tarotService.generateInterpretation(body.spread ?? [], body.type, body.tone);
   }
 
