@@ -38,3 +38,26 @@ export interface SpreadInterpretation {
   shadow: string;
   nextStep: string;
 }
+
+export interface AuthUser {
+  id: string;
+  email: string;
+  name: string;
+  premiumTier: 'free' | 'premium';
+  premiumUntil: string | null;
+}
+
+export interface AuthSession {
+  accessToken: string;
+  user: AuthUser;
+}
+
+export interface CloudSpread {
+  id: string;
+  title: string;
+  spreadType: SpreadType;
+  cards: DrawnCard[];
+  interpretation: SpreadInterpretation | null;
+  favorite: boolean;
+  createdAt: string;
+}

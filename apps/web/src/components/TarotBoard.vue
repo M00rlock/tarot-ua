@@ -16,13 +16,23 @@
     </header>
 
     <section class="panel auth-panel">
-      <div v-if="!currentUser" class="auth-grid">
-        <input v-model="authForm.name" class="auth-input" placeholder="Ваше ім’я" @keyup.enter="login" />
-        <button class="btn" @click="login">Увійти</button>
+      <div v-if="!currentUser" class="auth-card">
+        <div>
+          <p class="eyebrow">Cloud sync</p>
+          <h2>{{ authMode === 'login' ? 'Увійти в кабінет' : 'Створити кабінет' }}</h2>
+          <p class="muted">JWT-сесія, PostgreSQL-історія, обране та premium-ready профіль.</p>
+        </div>
+        <div class="auth-grid">
+          <input v-if="authMode === 'register'" v-model="authForm.name" class="auth-input" placeholder="Ваше ім’я" />
+          <input v-model="authForm.email" class="auth-input" placeholder="Email" autocomplete="email" />
+          <input v-model="authForm.password" class="auth-input" placeholder="Пароль" type="password" autocomplete="current-password" @keyup.enter="submitAuth" />
+          <button class="btn" :disabled="authLoading" @click="submitAuth">{{ authMode === 'login' ? 'Увійти' : 'Зареєструватись' }}</button>
+          <button class="btn btn-ghost" type="button" @click="toggleAuthMode">{{ authMode === 'login' ? 'Створити акаунт' : 'Вже маю акаунт' }}</button>
+        </div>
       </div>
 
       <div v-else class="auth-user">
-        <div>✨ Привіт, <strong>{{ currentUser }}</strong></div>
+        <div>✨ Привіт, <strong>{{ currentUser.name }}</strong> <span class="premium-pill">{{ currentUser.premiumTier === 'premium' ? 'Premium' : 'Free' }}</span></div>
         <button class="btn btn-secondary" @click="logout">Вийти</button>
       </div>
     </section>
@@ -261,12 +271,12 @@
 
 <script setup lang="ts">
 import { computed, nextTick, onMounted, ref } from 'vue';
-import { drawSpread, fetchCardOfDay, fetchCards, fetchSpreadDefinitions, fetchSpreadInterpretation } from '../services/api';
+import { clearAccessToken, drawSpread, fetchCardOfDay, fetchCards, fetchCloudSpreads, fetchProfile, fetchSpreadDefinitions, fetchSpreadInterpretation, getAccessToken, loginUser, registerUser, saveCloudSpread } from '../services/api';
 import { cardMeaning } from '../utils';
-import type { DrawnCard, InterpretationTone, SpreadDefinition, SpreadInterpretation, SpreadType, TarotCard } from '../types';
+import type { AuthUser, CloudSpread, DrawnCard, InterpretationTone, SpreadDefinition, SpreadInterpretation, SpreadType, TarotCard } from '../types';
 
 interface StoredSpread {
-  id: number;
+  id: string;
   title: string;
   date: string;
   cards: string[];
@@ -288,11 +298,13 @@ const ritualSection = ref<HTMLElement | null>(null);
 const boardSection = ref<HTMLElement | null>(null);
 const selectorCollapsed = ref(false);
 const boardPulse = ref(false);
-const currentUser = ref(localStorage.getItem('tarot-user') || '');
+const currentUser = ref<AuthUser | null>(null);
 const theme = ref<'dark' | 'light'>((localStorage.getItem('tarot-theme') as 'dark' | 'light') || 'dark');
-const authForm = ref({ name: '' });
-const spreadHistory = ref<StoredSpread[]>(loadUserList('history'));
-const favoriteSpreads = ref<StoredSpread[]>(loadUserList('favorites'));
+const authMode = ref<'login' | 'register'>('login');
+const authLoading = ref(false);
+const authForm = ref({ name: '', email: '', password: '' });
+const spreadHistory = ref<StoredSpread[]>([]);
+const favoriteSpreads = ref<StoredSpread[]>([]);
 
 const activeSpreadDefinition = computed(() => spreadDefinitions.value.find((item) => item.id === activeSpreadType.value));
 
@@ -342,18 +354,29 @@ function toggleTheme() {
   applyTheme();
 }
 
-function storageKey(kind: 'history' | 'favorites') {
-  return `tarot-${kind}-${currentUser.value}`;
+function cloudEntryToStored(entry: CloudSpread): StoredSpread {
+  return {
+    id: entry.id,
+    title: entry.title,
+    date: new Date(entry.createdAt).toLocaleString('uk-UA'),
+    cards: entry.cards.map((card) => `${card.position}: ${card.card.name}${card.reversed ? ' (перевернута)' : ''}`)
+  };
 }
 
-function loadUserList(kind: 'history' | 'favorites'): StoredSpread[] {
-  if (!currentUser.value) return [];
-  return JSON.parse(localStorage.getItem(storageKey(kind)) || '[]') as StoredSpread[];
-}
+async function syncUserLists() {
+  if (!currentUser.value) {
+    spreadHistory.value = [];
+    favoriteSpreads.value = [];
+    return;
+  }
 
-function syncUserLists() {
-  spreadHistory.value = loadUserList('history');
-  favoriteSpreads.value = loadUserList('favorites');
+  const [history, favorites] = await Promise.all([
+    fetchCloudSpreads(),
+    fetchCloudSpreads(true)
+  ]);
+
+  spreadHistory.value = history.map(cloudEntryToStored);
+  favoriteSpreads.value = favorites.map(cloudEntryToStored);
 }
 
 async function loadCards() {
@@ -394,7 +417,7 @@ async function refreshSpread(type: SpreadType = activeSpreadType.value) {
     spread.value = drawnCards;
     revealKey.value += 1;
     await generateInterpretation();
-    saveSpreadToHistory(spread.value, definition?.title ?? `Розклад на ${spread.value.length} карт`);
+    await saveSpreadToHistory(spread.value, definition?.title ?? `Розклад на ${spread.value.length} карт`);
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'Сталася помилка';
   } finally {
@@ -433,39 +456,55 @@ async function setInterpretationTone(tone: InterpretationTone) {
   await generateInterpretation();
 }
 
-function login() {
-  if (!authForm.value.name.trim()) return;
-  currentUser.value = authForm.value.name.trim();
-  localStorage.setItem('tarot-user', currentUser.value);
-  authForm.value.name = '';
-  syncUserLists();
+function toggleAuthMode() {
+  authMode.value = authMode.value === 'login' ? 'register' : 'login';
+  error.value = '';
+}
+
+async function submitAuth() {
+  if (!authForm.value.email.trim() || !authForm.value.password.trim()) return;
+
+  authLoading.value = true;
+  error.value = '';
+
+  try {
+    const session = authMode.value === 'login'
+      ? await loginUser({ email: authForm.value.email, password: authForm.value.password })
+      : await registerUser({ email: authForm.value.email, password: authForm.value.password, name: authForm.value.name });
+
+    currentUser.value = session.user;
+    authForm.value = { name: '', email: '', password: '' };
+    await syncUserLists();
+  } catch (err) {
+    error.value = err instanceof Error ? err.message : 'Не вдалося авторизуватись';
+  } finally {
+    authLoading.value = false;
+  }
 }
 
 function logout() {
-  localStorage.removeItem('tarot-user');
-  currentUser.value = '';
+  clearAccessToken();
+  currentUser.value = null;
   spreadHistory.value = [];
   favoriteSpreads.value = [];
 }
 
-function spreadToStoredEntry(cards: DrawnCard[], title: string): StoredSpread {
-  return {
-    id: Date.now(),
-    title,
-    date: new Date().toLocaleString('uk-UA'),
-    cards: cards.map((card) => `${card.position}: ${card.card.name}${card.reversed ? ' (перевернута)' : ''}`)
-  };
-}
-
-function saveSpreadToHistory(cards: DrawnCard[], title: string) {
+async function saveSpreadToHistory(cards: DrawnCard[], title: string) {
   if (!currentUser.value || !cards.length) return;
 
-  spreadHistory.value.unshift(spreadToStoredEntry(cards, title));
+  const saved = await saveCloudSpread({
+    title,
+    spreadType: activeSpreadType.value,
+    cards,
+    interpretation: interpretation.value,
+    favorite: false
+  });
+
+  spreadHistory.value.unshift(cloudEntryToStored(saved));
   spreadHistory.value = spreadHistory.value.slice(0, 20);
-  localStorage.setItem(storageKey('history'), JSON.stringify(spreadHistory.value));
 }
 
-function saveFavoriteSpread() {
+async function saveFavoriteSpread() {
   if (!currentUser.value) {
     copyStatus.value = 'Спочатку увійди, щоб зберігати обрані розклади.';
     return;
@@ -473,10 +512,21 @@ function saveFavoriteSpread() {
 
   if (!spread.value.length) return;
 
-  favoriteSpreads.value.unshift(spreadToStoredEntry(spread.value, activeSpreadDefinition.value?.title ?? 'Обраний розклад'));
-  favoriteSpreads.value = favoriteSpreads.value.slice(0, 12);
-  localStorage.setItem(storageKey('favorites'), JSON.stringify(favoriteSpreads.value));
-  copyStatus.value = 'Розклад додано в обране.';
+  try {
+    const saved = await saveCloudSpread({
+      title: activeSpreadDefinition.value?.title ?? 'Обраний розклад',
+      spreadType: activeSpreadType.value,
+      cards: spread.value,
+      interpretation: interpretation.value,
+      favorite: true
+    });
+
+    favoriteSpreads.value.unshift(cloudEntryToStored(saved));
+    favoriteSpreads.value = favoriteSpreads.value.slice(0, 12);
+    copyStatus.value = 'Розклад додано в обране.';
+  } catch (err) {
+    copyStatus.value = err instanceof Error ? err.message : 'Не вдалося додати в обране.';
+  }
 }
 
 async function copySpreadText() {
@@ -505,6 +555,15 @@ onMounted(async () => {
   applyTheme();
 
   try {
+    if (getAccessToken()) {
+      try {
+        currentUser.value = await fetchProfile();
+        await syncUserLists();
+      } catch {
+        clearAccessToken();
+      }
+    }
+
     await Promise.all([loadCards(), loadCardOfDay(), loadSpreadDefinitions()]);
     await refreshSpread('classic3');
     selectorCollapsed.value = false;
@@ -564,6 +623,42 @@ onMounted(async () => {
 }
 
 .auth-grid,
+
+.auth-card {
+  display: grid;
+  gap: 1rem;
+}
+
+.auth-card h2 {
+  margin: 0 0 0.35rem;
+}
+
+.auth-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.auth-input {
+  min-height: 44px;
+  border-radius: 999px;
+  border: 1px solid var(--border, rgba(223, 205, 168, 0.7));
+  background: rgba(255, 255, 255, 0.08);
+  color: inherit;
+  padding: 0 1rem;
+}
+
+.premium-pill {
+  display: inline-flex;
+  margin-left: 0.5rem;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  border: 1px solid rgba(245, 199, 106, 0.5);
+  color: #f5c76a;
+  font-size: 0.78rem;
+}
+
 .auth-user,
 .section-head,
 .section-actions {

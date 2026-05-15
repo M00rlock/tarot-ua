@@ -1,7 +1,23 @@
 services:
-  janusgraph:
-    image: janusgraph/janusgraph:latest
-    container_name: tarot-janusgraph
-    ports:
-      - '8182:8182'
+  postgres:
+    image: postgres:16-alpine
+    container_name: tarot-postgres
     restart: unless-stopped
+    environment:
+      POSTGRES_USER: tarot
+      POSTGRES_PASSWORD: tarot
+      POSTGRES_DB: tarot
+    ports:
+      - "5432:5432"
+    volumes:
+      - tarot-postgres-data:/var/lib/postgresql/data
+
+  gremlin:
+    image: tinkerpop/gremlin-server:3.7.3
+    container_name: tarot-gremlin
+    restart: unless-stopped
+    ports:
+      - "8182:8182"
+
+volumes:
+  tarot-postgres-data:

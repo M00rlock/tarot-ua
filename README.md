@@ -78,3 +78,50 @@ JANUSGRAPH_ENDPOINT=ws://your-host:8182/gremlin
 - ребра зв'язків між картами (`influences`, `mirrors`, `blocks`)
 - E2E тести і CI
 - перемикач мов (UA/EN)
+
+## Auth v2 + Cloud sync
+
+Ця версія додає production-like MVP авторизації:
+
+- JWT auth (`/api/auth/register`, `/api/auth/login`, `/api/auth/me`)
+- PostgreSQL через TypeORM
+- профіль користувача з `premiumTier`
+- cloud history для розкладів (`/api/me/spreads`)
+- favorites через `favorite=true`
+- `.env.example` з базовими змінними
+
+### Запуск PostgreSQL
+
+```bash
+docker compose -f infra/docker-compose.yml up -d postgres
+```
+
+### Запуск проєкту
+
+```bash
+npm install
+npm run dev
+```
+
+Для dev-режиму TypeORM `synchronize=true`. Для production краще вимкнути `TYPEORM_SYNC=false` і додати міграції.
+
+
+## Auth/API routes note
+
+Backend now uses a global `/api` prefix. Test routes directly with:
+
+```bash
+curl http://localhost:3000/api/health
+curl http://localhost:3000/api/auth/health
+curl -X POST http://localhost:3000/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"email":"test@test.com","password":"password123","name":"Test"}'
+```
+
+Vite proxies `/api/*` to `http://localhost:3000/api/*` without rewriting.
+
+If routes still look missing, kill the old process on port 3000:
+
+```bash
+lsof -ti :3000 | xargs kill -9
+```
