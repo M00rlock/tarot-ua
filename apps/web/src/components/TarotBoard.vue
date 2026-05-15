@@ -1,17 +1,18 @@
 <template>
-  <main class="page">
+  <main class="page session-page">
     <div class="ambient-orb orb-one" aria-hidden="true"></div>
     <div class="ambient-orb orb-two" aria-hidden="true"></div>
 
     <header class="hero hero-ritual" :class="{ 'hero-v2': flags.mysticHeroV2 }">
       <div class="hero-top">
-        <p class="eyebrow">Пет-проєкт для портфоліо</p>
+        <a class="quiet-back-link" href="/">← На головну</a>
+        <p class="eyebrow">Тиха сесія</p>
       </div>
-      <h1>Таро Черіот</h1>
-      <p class="subtitle">{{ flags.mysticHeroV2 ? 'Сформулюйте питання подумки. Оберіть розклад — і нехай карти покажуть прихований вектор.' : 'Зосередьтесь на своєму питанні. Оберіть ритуал — і карти відкриються у правильному ритмі.' }}</p>
+      <h1>Почніть з того, що є всередині</h1>
+      <p class="subtitle">Сформулюйте думку, яка зараз не відпускає. Оберіть практику — і дозвольте картам стати приводом для спокійної саморефлексії.</p>
       <div class="hero-actions">
-        <button class="btn btn-large" type="button" @click="scrollToRitual">Розпочати розклад</button>
-        <span class="hero-hint">3–5 карт · перевернуті значення · історія</span>
+        <button class="btn btn-large" type="button" @click="scrollToRitual">Зосередитись і обрати практику</button>
+        <span class="hero-hint">пауза · символи · м’яка рефлексія · нотатки</span>
       </div>
     </header>
 
