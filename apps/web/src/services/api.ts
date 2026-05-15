@@ -1,4 +1,4 @@
-import type { DrawnCard, SpreadDefinition, SpreadType, TarotCard } from '../types';
+import type { DrawnCard, InterpretationTone, SpreadDefinition, SpreadInterpretation, SpreadType, TarotCard } from '../types';
 
 const baseHeaders = {
   'Content-Type': 'application/json'
@@ -46,4 +46,19 @@ export async function fetchCardOfDay(date?: string): Promise<DrawnCard> {
   }
 
   return (await response.json()) as DrawnCard;
+}
+
+
+export async function fetchSpreadInterpretation(spread: DrawnCard[], type: SpreadType, tone: InterpretationTone = 'psychological'): Promise<SpreadInterpretation> {
+  const response = await fetch('/api/tarot/interpretation', {
+    method: 'POST',
+    headers: baseHeaders,
+    body: JSON.stringify({ spread, type, tone })
+  });
+
+  if (!response.ok) {
+    throw new Error('Не вдалося згенерувати AI-тлумачення');
+  }
+
+  return (await response.json()) as SpreadInterpretation;
 }

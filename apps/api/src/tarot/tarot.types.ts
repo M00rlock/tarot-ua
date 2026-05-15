@@ -27,3 +27,17 @@ export interface SpreadDefinition {
   positions: Array<{ name: string; description: string }>;
 }
 
+
+
+export type InterpretationTone = 'psychological' | 'mystic' | 'practical';
+
+export interface SpreadInterpretation {
+  title: string;
+  tone: InterpretationTone;
+  summary: string;
+  energy: string;
+  interactions: string[];
+  advice: string[];
+  shadow: string;
+  nextStep: string;
+}

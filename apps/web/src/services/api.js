@@ -34,3 +34,14 @@ export async function fetchCardOfDay(date) {
     }
     return (await response.json());
 }
+export async function fetchSpreadInterpretation(spread, type, tone = 'psychological') {
+    const response = await fetch('/api/tarot/interpretation', {
+        method: 'POST',
+        headers: baseHeaders,
+        body: JSON.stringify({ spread, type, tone })
+    });
+    if (!response.ok) {
+        throw new Error('Не вдалося згенерувати AI-тлумачення');
+    }
+    return (await response.json());
+}

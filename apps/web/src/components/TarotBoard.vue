@@ -149,6 +149,71 @@
       <p v-if="copyStatus" class="success">{{ copyStatus }}</p>
     </section>
 
+    <section v-if="spread.length" class="panel interpretation-panel">
+      <div class="section-head interpretation-head">
+        <div>
+          <p class="eyebrow">AI-тлумачення</p>
+          <h2>Цілісне прочитання розкладу</h2>
+          <p class="muted">Не просто значення карт окремо — а зв’язки, напруга, порада й наступний крок.</p>
+        </div>
+        <div class="tone-switcher" aria-label="Тон тлумачення">
+          <button
+            v-for="tone in interpretationTones"
+            :key="tone.value"
+            class="tone-button"
+            :class="{ active: interpretationTone === tone.value }"
+            type="button"
+            :disabled="interpretationLoading"
+            @click="setInterpretationTone(tone.value)"
+          >
+            {{ tone.label }}
+          </button>
+        </div>
+      </div>
+
+      <div v-if="interpretationLoading" class="interpretation-loading">
+        <span class="spinner-orb" aria-hidden="true"></span>
+        <p>Зчитую взаємодію карт...</p>
+      </div>
+
+      <article v-else-if="interpretation" class="interpretation-card">
+        <div class="interpretation-summary">
+          <h3>{{ interpretation.title }}</h3>
+          <p>{{ interpretation.summary }}</p>
+        </div>
+
+        <div class="interpretation-energy">
+          <strong>Загальна енергія</strong>
+          <p>{{ interpretation.energy }}</p>
+        </div>
+
+        <div v-if="interpretation.interactions.length" class="interpretation-block">
+          <h3>Взаємодія карт</h3>
+          <ul>
+            <li v-for="item in interpretation.interactions" :key="item">{{ item }}</li>
+          </ul>
+        </div>
+
+        <div class="interpretation-grid">
+          <div class="interpretation-block">
+            <h3>Порада</h3>
+            <ul>
+              <li v-for="item in interpretation.advice" :key="item">{{ item }}</li>
+            </ul>
+          </div>
+          <div class="interpretation-block">
+            <h3>Тінь</h3>
+            <p>{{ interpretation.shadow }}</p>
+          </div>
+        </div>
+
+        <div class="next-step">
+          <strong>Наступний крок</strong>
+          <p>{{ interpretation.nextStep }}</p>
+        </div>
+      </article>
+    </section>
+
     <section v-if="favoriteSpreads.length" class="panel">
       <h2>Обрані розклади</h2>
       <div class="history-list">
@@ -196,9 +261,9 @@
 
 <script setup lang="ts">
 import { computed, nextTick, onMounted, ref } from 'vue';
-import { drawSpread, fetchCardOfDay, fetchCards, fetchSpreadDefinitions } from '../services/api';
+import { drawSpread, fetchCardOfDay, fetchCards, fetchSpreadDefinitions, fetchSpreadInterpretation } from '../services/api';
 import { cardMeaning } from '../utils';
-import type { DrawnCard, SpreadDefinition, SpreadType, TarotCard } from '../types';
+import type { DrawnCard, InterpretationTone, SpreadDefinition, SpreadInterpretation, SpreadType, TarotCard } from '../types';
 
 interface StoredSpread {
   id: number;
@@ -216,6 +281,9 @@ const loading = ref(false);
 const revealKey = ref(0);
 const error = ref('');
 const copyStatus = ref('');
+const interpretation = ref<SpreadInterpretation | null>(null);
+const interpretationLoading = ref(false);
+const interpretationTone = ref<InterpretationTone>('psychological');
 const ritualSection = ref<HTMLElement | null>(null);
 const boardSection = ref<HTMLElement | null>(null);
 const selectorCollapsed = ref(false);
@@ -227,6 +295,12 @@ const spreadHistory = ref<StoredSpread[]>(loadUserList('history'));
 const favoriteSpreads = ref<StoredSpread[]>(loadUserList('favorites'));
 
 const activeSpreadDefinition = computed(() => spreadDefinitions.value.find((item) => item.id === activeSpreadType.value));
+
+const interpretationTones: Array<{ value: InterpretationTone; label: string }> = [
+  { value: 'psychological', label: 'Психологічно' },
+  { value: 'mystic', label: 'Містично' },
+  { value: 'practical', label: 'Практично' }
+];
 
 const spreadMetaMap: Record<SpreadType, { icon: string; description: string }> = {
   classic3: { icon: '✦', description: 'Минуле, теперішнє і найближчий напрямок.' },
@@ -305,6 +379,7 @@ async function loadCardOfDay() {
 }
 
 async function refreshSpread(type: SpreadType = activeSpreadType.value) {
+  interpretation.value = null;
   const definition = spreadDefinitions.value.find((item) => item.id === type);
   activeSpreadType.value = type;
   loading.value = true;
@@ -318,6 +393,7 @@ async function refreshSpread(type: SpreadType = activeSpreadType.value) {
     ]);
     spread.value = drawnCards;
     revealKey.value += 1;
+    await generateInterpretation();
     saveSpreadToHistory(spread.value, definition?.title ?? `Розклад на ${spread.value.length} карт`);
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'Сталася помилка';
@@ -336,6 +412,25 @@ function revealStyle(index: number) {
 
 function detailRevealStyle(index: number) {
   return { '--reveal-delay': `${520 + index * 95}ms` };
+}
+
+async function generateInterpretation() {
+  if (!spread.value.length) return;
+
+  interpretationLoading.value = true;
+
+  try {
+    interpretation.value = await fetchSpreadInterpretation(spread.value, activeSpreadType.value, interpretationTone.value);
+  } catch (err) {
+    error.value = err instanceof Error ? err.message : 'Не вдалося згенерувати тлумачення';
+  } finally {
+    interpretationLoading.value = false;
+  }
+}
+
+async function setInterpretationTone(tone: InterpretationTone) {
+  interpretationTone.value = tone;
+  await generateInterpretation();
 }
 
 function login() {
@@ -1851,6 +1946,161 @@ onMounted(async () => {
 
   .spread-choice {
     min-height: 118px;
+  }
+}
+
+
+/* AI interpretation */
+.interpretation-panel {
+  border-color: rgba(244, 211, 139, 0.28);
+}
+
+.interpretation-head {
+  align-items: flex-start;
+}
+
+.tone-switcher {
+  display: flex;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.tone-button {
+  border: 1px solid rgba(230, 182, 106, 0.2);
+  border-radius: 999px;
+  padding: 0.55rem 0.75rem;
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.07);
+  cursor: pointer;
+  font-weight: 800;
+  transition: transform 160ms ease, border-color 160ms ease, background 160ms ease;
+}
+
+.tone-button:hover:not(:disabled),
+.tone-button.active {
+  transform: translateY(-1px);
+  border-color: rgba(244, 211, 139, 0.68);
+  background: rgba(230, 182, 106, 0.14);
+}
+
+.interpretation-loading {
+  min-height: 150px;
+  display: grid;
+  place-items: center;
+  gap: 0.8rem;
+  color: var(--muted);
+}
+
+.spinner-orb {
+  width: 3rem;
+  height: 3rem;
+  border-radius: 999px;
+  border: 1px solid rgba(244, 211, 139, 0.28);
+  background:
+    radial-gradient(circle at 50% 50%, rgba(244, 211, 139, 0.55), transparent 30%),
+    radial-gradient(circle at 50% 50%, rgba(140, 104, 255, 0.45), transparent 66%);
+  box-shadow: 0 0 34px rgba(140, 104, 255, 0.24), 0 0 24px rgba(230, 182, 106, 0.14);
+  animation: interpretation-pulse 1.1s ease-in-out infinite alternate;
+}
+
+.interpretation-card {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.interpretation-summary,
+.interpretation-energy,
+.interpretation-block,
+.next-step {
+  border: 1px solid rgba(230, 182, 106, 0.18);
+  border-radius: 18px;
+  padding: 1rem;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.03)),
+    rgba(8, 6, 17, 0.26);
+}
+
+.interpretation-summary {
+  border-color: rgba(244, 211, 139, 0.34);
+  box-shadow: 0 0 34px rgba(140, 104, 255, 0.1);
+}
+
+.interpretation-summary h3,
+.interpretation-block h3 {
+  margin: 0 0 0.55rem;
+  color: var(--ink);
+}
+
+.interpretation-summary p,
+.interpretation-energy p,
+.interpretation-block p,
+.next-step p,
+.interpretation-block li {
+  color: rgba(247, 234, 216, 0.88);
+  line-height: 1.58;
+}
+
+.interpretation-energy strong,
+.next-step strong {
+  display: block;
+  margin-bottom: 0.35rem;
+  color: var(--gold-strong);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.75rem;
+}
+
+.interpretation-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+  gap: 1rem;
+}
+
+.interpretation-block ul {
+  margin: 0;
+  padding-left: 1.1rem;
+}
+
+.interpretation-block li + li {
+  margin-top: 0.55rem;
+}
+
+.next-step {
+  background:
+    radial-gradient(circle at 10% 20%, rgba(230, 182, 106, 0.13), transparent 16rem),
+    linear-gradient(135deg, rgba(125, 76, 255, 0.16), rgba(186, 123, 50, 0.1));
+}
+
+:global([data-theme='light']) .interpretation-summary,
+:global([data-theme='light']) .interpretation-energy,
+:global([data-theme='light']) .interpretation-block,
+:global([data-theme='light']) .next-step {
+  background: #fff8f0;
+  border-color: #e3c6a7;
+}
+
+:global([data-theme='light']) .interpretation-summary p,
+:global([data-theme='light']) .interpretation-energy p,
+:global([data-theme='light']) .interpretation-block p,
+:global([data-theme='light']) .next-step p,
+:global([data-theme='light']) .interpretation-block li {
+  color: #3d3126;
+}
+
+@keyframes interpretation-pulse {
+  from { transform: scale(0.92) rotate(0deg); opacity: 0.78; }
+  to { transform: scale(1.06) rotate(18deg); opacity: 1; }
+}
+
+@media (max-width: 760px) {
+  .interpretation-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .tone-switcher {
+    justify-content: flex-start;
   }
 }
 
