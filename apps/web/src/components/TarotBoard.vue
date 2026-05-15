@@ -600,18 +600,16 @@ function selectShareUrl(event: Event) {
 async function nativeShare() {
   if (!shareResult.value) return;
 
-  const shareUrl = shareResult.value.url;
   const payload = {
     title: shareResult.value.social.title,
     text: shareResult.value.social.description,
     url: shareResult.value.url
   };
 
-if (navigator.share && navigator.canShare?.(payload)) {
-  await navigator.share(payload);
-} else {
-  await navigator.clipboard.writeText(shareUrl);
-}
+  if (navigator.share) {
+    await navigator.share(payload);
+    return;
+  }
 
   await copyShareUrl();
 }
