@@ -147,3 +147,35 @@ curl http://localhost:3000/api/share/spreads/non-existent
 - short URL: `/share/:slug`
 - PNG preview у браузері
 - social card SVG: `/api/share/spreads/:slug/social-card.svg`
+
+## Analytics
+
+The web app supports optional PostHog analytics with graceful no-key fallback.
+
+Create `apps/web/.env`:
+
+```env
+VITE_POSTHOG_KEY=phc_your_project_key
+VITE_POSTHOG_HOST=https://eu.i.posthog.com
+VITE_ANALYTICS_ENABLED=true
+```
+
+Tracked events include:
+
+- `app_opened`
+- `ritual_start_clicked`
+- `spread_selected`
+- `reading_generated`
+- `ai_interpretation_generated`
+- `interpretation_tone_changed`
+- `share_clicked`
+- `share_link_created`
+- `native_share_completed`
+- `share_url_copied`
+- `favorite_added`
+- `login_completed`
+- `registration_completed`
+- `daily_card_opened`
+- `deck_toggled`
+
+Session replay is enabled in PostHog, with input masking for email/password fields. Users can opt out by setting `localStorage['tarot-analytics-opt-out'] = 'true'`.

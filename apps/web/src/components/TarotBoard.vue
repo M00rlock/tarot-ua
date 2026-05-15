@@ -101,6 +101,7 @@ import StoredSpreadsList from './StoredSpreadsList.vue';
 import { clearAccessToken, createShareableSpread, drawSpread, fetchCardOfDay, fetchCards, fetchCloudSpreads, fetchProfile, fetchSharedSpread, fetchSpreadDefinitions, fetchSpreadInterpretation, getAccessToken, loginUser, registerUser, saveCloudSpread } from '../services/api';
 import { buildSharePreview } from '../sharePreview';
 import { cardMeaning } from '../utils';
+import { identifyUser, interpretationAnalyticsPayload, resetAnalyticsUser, spreadAnalyticsPayload, trackEvent } from '../analytics/useAnalytics';
 import type { AuthUser, CloudSpread, DrawnCard, InterpretationTone, SharedSpread, SpreadDefinition, SpreadInterpretation, SpreadType, TarotCard } from '../types';
 
 interface StoredSpread {
@@ -149,10 +150,12 @@ const interpretationTones: Array<{ value: InterpretationTone; label: string }> =
 ];
 
 function scrollToRitual() {
+  trackEvent('ritual_start_clicked');
   ritualSection.value?.scrollIntoView();
 }
 
 async function chooseSpread(type: SpreadType) {
+  trackEvent('spread_selected', { spreadType: type });
   selectorCollapsed.value = true;
   await refreshSpread(type);
   await nextTick();
@@ -175,6 +178,7 @@ function applyTheme() {
 function toggleTheme() {
   theme.value = theme.value === 'dark' ? 'light' : 'dark';
   applyTheme();
+  trackEvent('theme_changed', { theme: theme.value });
 }
 
 function cloudEntryToStored(entry: CloudSpread): StoredSpread {
@@ -215,6 +219,7 @@ async function loadCards() {
 
 async function toggleDeck() {
   showDeck.value = !showDeck.value;
+  trackEvent('deck_toggled', { expanded: showDeck.value });
   if (showDeck.value) {
     await loadCards();
   }
@@ -236,6 +241,10 @@ function setPlaceholderImage(event: Event) {
 
 async function loadCardOfDay() {
   cardOfDay.value = await fetchCardOfDay();
+  trackEvent('daily_card_opened', {
+    cardId: cardOfDay.value.card.id,
+    reversed: cardOfDay.value.reversed
+  });
 }
 
 async function refreshSpread(type: SpreadType = activeSpreadType.value) {
@@ -255,6 +264,7 @@ async function refreshSpread(type: SpreadType = activeSpreadType.value) {
     ]);
     spread.value = drawnCards;
     revealKey.value += 1;
+    trackEvent('reading_generated', spreadAnalyticsPayload(spread.value, activeSpreadType.value));
     await generateInterpretation();
     await saveSpreadToHistory(spread.value, definition?.title ?? `Розклад на ${spread.value.length} карт`);
   } catch (err) {
@@ -276,6 +286,12 @@ async function generateInterpretation() {
 
   try {
     interpretation.value = await fetchSpreadInterpretation(spread.value, activeSpreadType.value, interpretationTone.value);
+    trackEvent('ai_interpretation_generated', interpretationAnalyticsPayload({
+      spread: spread.value,
+      spreadType: activeSpreadType.value,
+      tone: interpretationTone.value,
+      source: interpretation.value.provider
+    }));
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'Не вдалося згенерувати тлумачення';
   } finally {
@@ -285,6 +301,7 @@ async function generateInterpretation() {
 
 async function setInterpretationTone(tone: InterpretationTone) {
   interpretationTone.value = tone;
+  trackEvent('interpretation_tone_changed', { tone });
   await generateInterpretation();
 }
 
@@ -305,6 +322,10 @@ async function submitAuth() {
       : await registerUser({ email: authForm.value.email, password: authForm.value.password, name: authForm.value.name });
 
     currentUser.value = session.user;
+    identifyUser(session.user);
+    trackEvent(authMode.value === 'login' ? 'login_completed' : 'registration_completed', {
+      premiumTier: session.user.premiumTier
+    });
     authForm.value = { name: '', email: '', password: '' };
     await syncUserLists();
   } catch (err) {
@@ -315,7 +336,9 @@ async function submitAuth() {
 }
 
 function logout() {
+  trackEvent('logout_clicked');
   clearAccessToken();
+  resetAnalyticsUser();
   currentUser.value = null;
   spreadHistory.value = [];
   favoriteSpreads.value = [];
@@ -355,6 +378,7 @@ async function saveFavoriteSpread() {
 
     favoriteSpreads.value.unshift(cloudEntryToStored(saved));
     favoriteSpreads.value = favoriteSpreads.value.slice(0, 12);
+    trackEvent('favorite_added', spreadAnalyticsPayload(spread.value, activeSpreadType.value));
     copyStatus.value = 'Розклад додано в обране.';
   } catch (err) {
     copyStatus.value = err instanceof Error ? err.message : 'Не вдалося додати в обране.';
@@ -364,6 +388,8 @@ async function saveFavoriteSpread() {
 
 async function shareCurrentSpread() {
   if (!spread.value.length) return;
+
+  trackEvent('share_clicked', spreadAnalyticsPayload(spread.value, activeSpreadType.value));
 
   shareLoading.value = true;
   copyStatus.value = '';
@@ -379,6 +405,10 @@ async function shareCurrentSpread() {
 
     shareResult.value = result;
     sharePreviewUrl.value = await buildSharePreview(result);
+    trackEvent('share_link_created', {
+      slug: result.slug,
+      ...spreadAnalyticsPayload(spread.value, activeSpreadType.value)
+    });
     copyStatus.value = 'Публічне посилання створено.';
   } catch (err) {
     copyStatus.value = err instanceof Error ? err.message : 'Не вдалося створити share-link.';
@@ -392,6 +422,7 @@ async function copyShareUrl() {
 
   try {
     await navigator.clipboard.writeText(shareResult.value.url);
+    trackEvent('share_url_copied', { slug: shareResult.value.slug });
     copyStatus.value = 'Посилання скопійовано.';
   } catch {
     copyStatus.value = 'Не вдалося скопіювати посилання автоматично.';
@@ -413,6 +444,7 @@ async function nativeShare() {
 
   if (navigator.share) {
     await navigator.share(payload);
+    trackEvent('native_share_completed', { slug: shareResult.value.slug });
     return;
   }
 
@@ -429,6 +461,11 @@ async function loadSharedView(slug: string) {
   shareResult.value = shared;
   sharePreviewUrl.value = await buildSharePreview(shared);
   copyStatus.value = 'Відкрито публічний розклад.';
+  trackEvent('shared_spread_opened', {
+    slug,
+    spreadType: shared.spreadType,
+    cardsCount: shared.cards.length
+  });
 }
 
 async function copySpreadText() {
@@ -447,6 +484,7 @@ async function copySpreadText() {
 
   try {
     await navigator.clipboard.writeText(text);
+    trackEvent('reading_text_copied', spreadAnalyticsPayload(spread.value, activeSpreadType.value));
     copyStatus.value = 'Текст розкладу скопійовано.';
   } catch {
     copyStatus.value = 'Не вдалося скопіювати автоматично.';
@@ -455,11 +493,13 @@ async function copySpreadText() {
 
 onMounted(async () => {
   applyTheme();
+  trackEvent('app_opened', { theme: theme.value });
 
   try {
     if (getAccessToken()) {
       try {
         currentUser.value = await fetchProfile();
+        identifyUser(currentUser.value);
         await syncUserLists();
       } catch {
         clearAccessToken();
