@@ -12,6 +12,18 @@
   --rose: #d77ab6;
   --shadow: rgba(0, 0, 0, 0.42);
   font-family: 'Montserrat', 'Avenir Next', 'Trebuchet MS', sans-serif;
+  --radius-xl: 32px;
+  --radius-lg: 24px;
+  --radius-md: 18px;
+  --panel-shadow:
+    0 22px 70px rgba(0, 0, 0, 0.34),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  --panel-bg:
+    linear-gradient(
+      180deg,
+      rgba(32, 22, 50, 0.92),
+      rgba(20, 14, 33, 0.82)
+    );
 }
 
 * { box-sizing: border-box; }
@@ -90,6 +102,15 @@ img {
     animation-iteration-count: 1 !important;
     scroll-behavior: auto !important;
   }
+}
+
+.hero,
+.panel,
+.card-item,
+.journal-card {
+  border-radius: var(--radius-xl);
+  background: var(--panel-bg);
+  box-shadow: var(--panel-shadow);
 }
 
 /* SEO content pages */
