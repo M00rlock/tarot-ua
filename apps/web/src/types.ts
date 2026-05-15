@@ -61,3 +61,22 @@ export interface CloudSpread {
   favorite: boolean;
   createdAt: string;
 }
+
+export interface ShareSocialMeta {
+  title: string;
+  description: string;
+  imageUrl: string;
+}
+
+export interface SharedSpread {
+  id: string;
+  slug: string;
+  title: string;
+  spreadType: SpreadType;
+  cards: DrawnCard[];
+  interpretation: SpreadInterpretation | null;
+  createdAt: string;
+  url: string;
+  path: string;
+  social: ShareSocialMeta;
+}

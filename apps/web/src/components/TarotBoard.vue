@@ -103,6 +103,7 @@
         <div class="section-actions" v-if="spread.length">
           <button class="btn btn-secondary" @click="saveFavoriteSpread">★ В обране</button>
           <button class="btn btn-ghost" @click="copySpreadText">Копіювати текст</button>
+          <button class="btn btn-share" :disabled="shareLoading" @click="shareCurrentSpread">📸 Поділитись</button>
         </div>
       </div>
 
@@ -157,6 +158,26 @@
 
       <p v-else class="muted">Обери тип розкладу й натисни кнопку.</p>
       <p v-if="copyStatus" class="success">{{ copyStatus }}</p>
+
+      <Transition name="share-panel">
+        <aside v-if="shareResult" class="share-result" aria-live="polite">
+          <div class="share-copy">
+            <p class="eyebrow">Публічний розклад</p>
+            <h3>Готово до поширення</h3>
+            <p class="muted">Створено short URL, social card і PNG preview для месенджерів або соцмереж.</p>
+            <div class="share-url-row">
+              <input class="share-url" :value="shareResult.url" readonly @focus="selectShareUrl" />
+              <button class="btn btn-secondary" @click="copyShareUrl">Копіювати URL</button>
+            </div>
+            <div class="share-actions">
+              <button class="btn btn-ghost" @click="nativeShare">Системно поділитись</button>
+              <a v-if="sharePreviewUrl" class="btn btn-ghost share-download" :href="sharePreviewUrl" download="tarot-spread.png">Завантажити PNG</a>
+              <a class="btn btn-ghost share-download" :href="shareResult.social.imageUrl" target="_blank" rel="noreferrer">Social card SVG</a>
+            </div>
+          </div>
+          <img v-if="sharePreviewUrl" class="share-preview" :src="sharePreviewUrl" alt="Превʼю розкладу для поширення" />
+        </aside>
+      </Transition>
     </section>
 
     <section v-if="spread.length" class="panel interpretation-panel">
@@ -271,9 +292,9 @@
 
 <script setup lang="ts">
 import { computed, nextTick, onMounted, ref } from 'vue';
-import { clearAccessToken, drawSpread, fetchCardOfDay, fetchCards, fetchCloudSpreads, fetchProfile, fetchSpreadDefinitions, fetchSpreadInterpretation, getAccessToken, loginUser, registerUser, saveCloudSpread } from '../services/api';
+import { clearAccessToken, createShareableSpread, drawSpread, fetchCardOfDay, fetchCards, fetchCloudSpreads, fetchProfile, fetchSharedSpread, fetchSpreadDefinitions, fetchSpreadInterpretation, getAccessToken, loginUser, registerUser, saveCloudSpread } from '../services/api';
 import { cardMeaning } from '../utils';
-import type { AuthUser, CloudSpread, DrawnCard, InterpretationTone, SpreadDefinition, SpreadInterpretation, SpreadType, TarotCard } from '../types';
+import type { AuthUser, CloudSpread, DrawnCard, InterpretationTone, SharedSpread, SpreadDefinition, SpreadInterpretation, SpreadType, TarotCard } from '../types';
 
 interface StoredSpread {
   id: string;
@@ -305,6 +326,10 @@ const authLoading = ref(false);
 const authForm = ref({ name: '', email: '', password: '' });
 const spreadHistory = ref<StoredSpread[]>([]);
 const favoriteSpreads = ref<StoredSpread[]>([]);
+const shareResult = ref<SharedSpread | null>(null);
+const sharePreviewUrl = ref('');
+const shareLoading = ref(false);
+const isSharedView = ref(false);
 
 const activeSpreadDefinition = computed(() => spreadDefinitions.value.find((item) => item.id === activeSpreadType.value));
 
@@ -408,6 +433,8 @@ async function refreshSpread(type: SpreadType = activeSpreadType.value) {
   loading.value = true;
   error.value = '';
   copyStatus.value = '';
+  shareResult.value = null;
+  sharePreviewUrl.value = '';
 
   try {
     const [drawnCards] = await Promise.all([
@@ -529,6 +556,231 @@ async function saveFavoriteSpread() {
   }
 }
 
+
+async function shareCurrentSpread() {
+  if (!spread.value.length) return;
+
+  shareLoading.value = true;
+  copyStatus.value = '';
+
+  try {
+    const title = activeSpreadDefinition.value?.title ?? 'Мій розклад Таро';
+    const result = await createShareableSpread({
+      title,
+      spreadType: activeSpreadType.value,
+      cards: spread.value,
+      interpretation: interpretation.value
+    });
+
+    shareResult.value = result;
+    sharePreviewUrl.value = await buildSharePreview(result);
+    copyStatus.value = 'Публічне посилання створено.';
+  } catch (err) {
+    copyStatus.value = err instanceof Error ? err.message : 'Не вдалося створити share-link.';
+  } finally {
+    shareLoading.value = false;
+  }
+}
+
+async function copyShareUrl() {
+  if (!shareResult.value) return;
+
+  try {
+    await navigator.clipboard.writeText(shareResult.value.url);
+    copyStatus.value = 'Посилання скопійовано.';
+  } catch {
+    copyStatus.value = 'Не вдалося скопіювати посилання автоматично.';
+  }
+}
+
+function selectShareUrl(event: Event) {
+  (event.target as HTMLInputElement).select();
+}
+
+async function nativeShare() {
+  if (!shareResult.value) return;
+
+  const shareUrl = shareResult.value.url;
+  const payload = {
+    title: shareResult.value.social.title,
+    text: shareResult.value.social.description,
+    url: shareResult.value.url
+  };
+
+if (navigator.share && navigator.canShare?.(payload)) {
+  await navigator.share(payload);
+} else {
+  await navigator.clipboard.writeText(shareUrl);
+}
+
+  await copyShareUrl();
+}
+
+async function buildSharePreview(shared: SharedSpread) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 1200;
+  canvas.height = 630;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return '';
+
+  const gradient = ctx.createLinearGradient(0, 0, 1200, 630);
+  gradient.addColorStop(0, '#110b22');
+  gradient.addColorStop(0.52, '#281638');
+  gradient.addColorStop(1, '#120d1f');
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, 1200, 630);
+
+  const orb = ctx.createRadialGradient(610, 280, 30, 610, 280, 520);
+  orb.addColorStop(0, 'rgba(140,104,255,0.42)');
+  orb.addColorStop(0.55, 'rgba(230,182,106,0.14)');
+  orb.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = orb;
+  ctx.fillRect(0, 0, 1200, 630);
+
+  drawStars(ctx);
+  drawPreviewText(ctx, shared.title, shared.interpretation?.summary || 'Розклад Таро з цілісним тлумаченням карт, позицій і взаємодій.');
+  drawPreviewCards(ctx, shared.cards);
+
+  return canvas.toDataURL('image/png');
+}
+
+function drawStars(ctx: CanvasRenderingContext2D) {
+  const stars = [
+    [150, 120], [245, 72], [1030, 92], [980, 510], [1080, 420], [92, 500], [650, 96], [780, 545]
+  ];
+
+  ctx.fillStyle = 'rgba(244,211,139,0.78)';
+  for (const [x, y] of stars) {
+    ctx.beginPath();
+    ctx.arc(x, y, 2.2, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+function drawPreviewText(ctx: CanvasRenderingContext2D, title: string, summary: string) {
+  ctx.fillStyle = '#f4d38b';
+  ctx.font = '800 24px Inter, Arial, sans-serif';
+  ctx.fillText('ТАРО ЧЕРІОТ', 80, 88);
+
+  ctx.fillStyle = '#fff8e7';
+  ctx.font = '900 52px Inter, Arial, sans-serif';
+  wrapCanvasText(ctx, title, 80, 154, 880, 58, 2);
+
+  ctx.fillStyle = 'rgba(255,248,231,0.82)';
+  ctx.font = '400 23px Inter, Arial, sans-serif';
+  wrapCanvasText(ctx, summary, 80, 210, 880, 32, 2);
+}
+
+function drawPreviewCards(ctx: CanvasRenderingContext2D, cards: DrawnCard[]) {
+  const shown = cards.slice(0, 5);
+  const startX = shown.length === 3 ? 255 : 135;
+  const gap = shown.length === 3 ? 230 : 186;
+
+  shown.forEach((item, index) => {
+    const x = startX + index * gap;
+    const y = 280;
+    const cardGradient = ctx.createLinearGradient(x, y, x + 132, y + 214);
+    cardGradient.addColorStop(0, '#241739');
+    cardGradient.addColorStop(1, '#6d3f77');
+
+    roundRect(ctx, x, y, 132, 214, 18);
+    ctx.fillStyle = cardGradient;
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(244,211,139,0.58)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    ctx.strokeStyle = 'rgba(244,211,139,0.55)';
+    ctx.beginPath();
+    ctx.arc(x + 66, y + 76, 34, 0, Math.PI * 2);
+    ctx.stroke();
+
+    ctx.fillStyle = '#f4d38b';
+    ctx.font = '34px Inter, Arial, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('✦', x + 66, y + 91);
+
+    ctx.fillStyle = '#fff8e7';
+    ctx.font = '800 18px Inter, Arial, sans-serif';
+    ctx.fillText(String(index + 1), x + 66, y + 142);
+
+    ctx.fillStyle = '#f4d38b';
+    ctx.font = '700 13px Inter, Arial, sans-serif';
+    ctx.fillText(item.position.slice(0, 18), x + 66, y + 174);
+
+    ctx.fillStyle = '#fff8e7';
+    ctx.font = '700 12px Inter, Arial, sans-serif';
+    wrapCanvasText(ctx, `${item.reversed ? '↻ ' : ''}${item.card.name}`, x + 14, y + 194, 104, 16, 2, 'center');
+    ctx.textAlign = 'start';
+  });
+
+  ctx.fillStyle = '#f4d38b';
+  ctx.font = '800 22px Inter, Arial, sans-serif';
+  ctx.fillText('Поділись своїм розкладом ✦', 80, 560);
+
+  ctx.fillStyle = 'rgba(255,248,231,0.72)';
+  ctx.font = '400 18px Inter, Arial, sans-serif';
+  wrapCanvasText(ctx, cards.map((item) => item.card.name).join(' · '), 80, 594, 1040, 24, 1);
+}
+
+function wrapCanvasText(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  x: number,
+  y: number,
+  maxWidth: number,
+  lineHeight: number,
+  maxLines = 3,
+  align: CanvasTextAlign = 'start'
+) {
+  const words = text.split(' ');
+  let line = '';
+  let lineCount = 0;
+  const previousAlign = ctx.textAlign;
+  ctx.textAlign = align;
+  const drawX = align === 'center' ? x + maxWidth / 2 : x;
+
+  for (let i = 0; i < words.length; i += 1) {
+    const testLine = `${line}${words[i]} `;
+    if (ctx.measureText(testLine).width > maxWidth && i > 0) {
+      ctx.fillText(line.trim(), drawX, y + lineCount * lineHeight);
+      line = `${words[i]} `;
+      lineCount += 1;
+      if (lineCount >= maxLines) break;
+    } else {
+      line = testLine;
+    }
+  }
+
+  if (lineCount < maxLines && line.trim()) {
+    ctx.fillText(line.trim(), drawX, y + lineCount * lineHeight);
+  }
+
+  ctx.textAlign = previousAlign;
+}
+
+function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number, radius: number) {
+  ctx.beginPath();
+  ctx.moveTo(x + radius, y);
+  ctx.arcTo(x + width, y, x + width, y + height, radius);
+  ctx.arcTo(x + width, y + height, x, y + height, radius);
+  ctx.arcTo(x, y + height, x, y, radius);
+  ctx.arcTo(x, y, x + width, y, radius);
+  ctx.closePath();
+}
+
+async function loadSharedView(slug: string) {
+  const shared = await fetchSharedSpread(slug);
+  isSharedView.value = true;
+  activeSpreadType.value = shared.spreadType;
+  spread.value = shared.cards;
+  interpretation.value = shared.interpretation;
+  selectorCollapsed.value = true;
+  shareResult.value = shared;
+  sharePreviewUrl.value = await buildSharePreview(shared);
+  copyStatus.value = 'Відкрито публічний розклад.';
+}
+
 async function copySpreadText() {
   if (!spread.value.length) return;
 
@@ -565,8 +817,14 @@ onMounted(async () => {
     }
 
     await Promise.all([loadCards(), loadCardOfDay(), loadSpreadDefinitions()]);
-    await refreshSpread('classic3');
-    selectorCollapsed.value = false;
+
+    const sharedMatch = window.location.pathname.match(/^\/share\/([A-Za-z0-9_-]+)/);
+    if (sharedMatch?.[1]) {
+      await loadSharedView(sharedMatch[1]);
+    } else {
+      await refreshSpread('classic3');
+      selectorCollapsed.value = false;
+    }
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'Сталася помилка';
   }
@@ -2196,6 +2454,109 @@ onMounted(async () => {
 
   .tone-switcher {
     justify-content: flex-start;
+  }
+}
+
+
+/* Shareable spreads */
+.btn-share {
+  background: linear-gradient(135deg, #d08a37, #7d4cff 55%, #c77ab0);
+}
+
+.share-result {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 420px);
+  gap: 1rem;
+  align-items: center;
+  margin-top: 1rem;
+  padding: 1rem;
+  border-radius: 20px;
+  border: 1px solid rgba(244, 211, 139, 0.26);
+  background:
+    radial-gradient(circle at 8% 0%, rgba(230, 182, 106, 0.16), transparent 16rem),
+    linear-gradient(135deg, rgba(125, 76, 255, 0.16), rgba(255, 255, 255, 0.045));
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.22), 0 0 34px rgba(140, 104, 255, 0.12);
+}
+
+.share-copy h3 {
+  margin: 0 0 0.4rem;
+  color: var(--ink);
+}
+
+.share-url-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.6rem;
+  margin-top: 0.9rem;
+}
+
+.share-url {
+  min-width: 0;
+  border-radius: 999px;
+  border: 1px solid rgba(230, 182, 106, 0.25);
+  background: rgba(8, 6, 17, 0.42);
+  color: var(--ink);
+  padding: 0.78rem 1rem;
+  font-weight: 700;
+}
+
+.share-actions {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  margin-top: 0.75rem;
+}
+
+.share-download {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+}
+
+.share-preview {
+  width: 100%;
+  border-radius: 18px;
+  border: 1px solid rgba(244, 211, 139, 0.28);
+  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.28), 0 0 28px rgba(230, 182, 106, 0.12);
+  background: #110b22;
+}
+
+.share-panel-enter-active,
+.share-panel-leave-active {
+  transition: opacity 220ms ease, transform 220ms ease;
+}
+
+.share-panel-enter-from,
+.share-panel-leave-to {
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+:global([data-theme='light']) .share-result {
+  background: #fff8f0;
+  border-color: #e3c6a7;
+}
+
+:global([data-theme='light']) .share-url {
+  background: #fffdf8;
+  color: #2d2418;
+  border-color: #d7bd92;
+}
+
+@media (max-width: 820px) {
+  .share-result {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 620px) {
+  .share-url-row {
+    grid-template-columns: 1fr;
+  }
+
+  .share-actions {
+    display: grid;
   }
 }
 
