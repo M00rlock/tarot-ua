@@ -584,22 +584,6 @@ onMounted(async () => {
   background: linear-gradient(135deg, #fff9ed 0%, #f4e0bd 100%);
 }
 
-.hero::after {
-  content: '';
-
-  position: absolute;
-  inset: 0;
-
-  background:
-    radial-gradient(
-      circle at top,
-      rgba(255,255,255,0.04),
-      transparent 42%
-    );
-
-  pointer-events: none;
-}
-
 .panel {
   padding: 1.15rem;
   content-visibility: auto;
@@ -1426,6 +1410,7 @@ onMounted(async () => {
   position: relative;
   isolation: isolate;
 }
+
 
 .ambient-orb {
   position: fixed;
@@ -2320,4 +2305,67 @@ onMounted(async () => {
     radial-gradient(circle at top right, rgba(245, 199, 106, 0.18), transparent 36%),
     rgba(34, 24, 51, 0.82);
 }
+
+.card-item {
+  position: relative;
+  overflow: hidden;
+  transition:
+    transform 0.22s ease,
+    border-color 0.22s ease,
+    box-shadow 0.22s ease;
+}
+
+.card-item::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(244, 211, 139, 0.08), transparent 42%);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.22s ease;
+}
+
+.card-item:hover {
+  transform: translateY(-3px);
+  border-color: rgba(244, 211, 139, 0.42);
+  box-shadow:
+    0 26px 76px rgba(0, 0, 0, 0.42),
+    0 0 0 1px rgba(244, 211, 139, 0.08) inset;
+}
+
+.card-item:hover::before {
+  opacity: 1;
+}
+
+.card-visual {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+  background:
+    radial-gradient(circle at 50% 0%, rgba(244, 211, 139, 0.12), transparent 44%),
+    rgba(255, 255, 255, 0.045);
+}
+
+.card-image {
+  transition:
+    transform 0.28s ease,
+    filter 0.28s ease;
+}
+
+.card-item:hover .card-image {
+  transform: translateY(-2px) scale(1.015);
+  filter:
+    drop-shadow(0 18px 26px rgba(0, 0, 0, 0.28))
+    saturate(1.05);
+}
+
+.card-image.is-reversed {
+  transform: rotate(180deg);
+}
+
+.card-item:hover .card-image.is-reversed {
+  transform: rotate(180deg) translateY(2px) scale(1.015);
+}
+
 </style>
