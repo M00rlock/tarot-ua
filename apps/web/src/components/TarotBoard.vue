@@ -3,13 +3,13 @@
     <div class="ambient-orb orb-one" aria-hidden="true"></div>
     <div class="ambient-orb orb-two" aria-hidden="true"></div>
 
-    <header class="hero hero-ritual">
+    <header class="hero hero-ritual" :class="{ 'hero-v2': flags.mysticHeroV2 }">
       <div class="hero-top">
         <p class="eyebrow">Пет-проєкт для портфоліо</p>
         <button class="theme-toggle" type="button" @click="toggleTheme">{{ theme === 'dark' ? '☀️ Світла тема' : '🌙 Mystic тема' }}</button>
       </div>
       <h1>Таро Черіот</h1>
-      <p class="subtitle">Зосередьтесь на своєму питанні. Оберіть ритуал — і карти відкриються у правильному ритмі.</p>
+      <p class="subtitle">{{ flags.mysticHeroV2 ? 'Сформулюйте питання подумки. Оберіть розклад — і нехай карти покажуть прихований вектор.' : 'Зосередьтесь на своєму питанні. Оберіть ритуал — і карти відкриються у правильному ритмі.' }}</p>
       <div class="hero-actions">
         <button class="btn btn-large" type="button" @click="scrollToRitual">Розпочати розклад</button>
         <span class="hero-hint">3–5 карт · перевернуті значення · історія</span>
@@ -66,6 +66,13 @@
       @select-url="selectShareUrl"
     />
 
+    <section v-if="flags.premiumPreview" class="panel premium-preview-panel">
+      <p class="eyebrow">Premium preview</p>
+      <h2>Глибше AI-тлумачення</h2>
+      <p class="muted">Тут можна тестувати м’який upsell: розширений аналіз, персональні висновки, додаткові тони і довшу історію.</p>
+      <button class="btn btn-secondary" type="button" @click="trackPremiumPreviewClick">Подивитись можливості</button>
+    </section>
+
     <InterpretationPanel
       :has-spread="Boolean(spread.length)"
       :interpretation="interpretation"
@@ -75,8 +82,20 @@
       @set-tone="setInterpretationTone"
     />
 
-    <StoredSpreadsList title="Обрані розклади" :items="favoriteSpreads" />
-    <StoredSpreadsList title="Історія розкладів" :items="spreadHistory" />
+    <TarotJournal
+      title="Книга розкладів"
+      :items="favoriteSpreads"
+      @open="openJournalEntry"
+      @save-note="saveJournalNote"
+      @image-error="setPlaceholderImage"
+    />
+    <TarotJournal
+      title="Історія розкладів"
+      :items="spreadHistory"
+      @open="openJournalEntry"
+      @save-note="saveJournalNote"
+      @image-error="setPlaceholderImage"
+    />
 
     <DeckPanel
       :cards="cards"
@@ -97,19 +116,14 @@ import InterpretationPanel from './InterpretationPanel.vue';
 import RitualSelector from './RitualSelector.vue';
 import SharePanel from './SharePanel.vue';
 import SpreadBoard from './SpreadBoard.vue';
-import StoredSpreadsList from './StoredSpreadsList.vue';
-import { clearAccessToken, createShareableSpread, drawSpread, fetchCardOfDay, fetchCards, fetchCloudSpreads, fetchProfile, fetchSharedSpread, fetchSpreadDefinitions, fetchSpreadInterpretation, getAccessToken, loginUser, registerUser, saveCloudSpread } from '../services/api';
+import TarotJournal from './TarotJournal.vue';
+import { clearAccessToken, createShareableSpread, drawSpread, fetchCardOfDay, fetchCards, fetchCloudSpreads, fetchProfile, fetchSharedSpread, fetchSpreadDefinitions, fetchSpreadInterpretation, getAccessToken, loginUser, registerUser, saveCloudSpread, updateCloudSpreadNote } from '../services/api';
 import { buildSharePreview } from '../sharePreview';
 import { cardMeaning } from '../utils';
 import { identifyUser, interpretationAnalyticsPayload, resetAnalyticsUser, spreadAnalyticsPayload, trackEvent } from '../analytics/useAnalytics';
+import { useFeatures } from '../analytics/useFeatures';
 import type { AuthUser, CloudSpread, DrawnCard, InterpretationTone, SharedSpread, SpreadDefinition, SpreadInterpretation, SpreadType, TarotCard } from '../types';
 
-interface StoredSpread {
-  id: string;
-  title: string;
-  date: string;
-  cards: string[];
-}
 
 const cards = ref<TarotCard[]>([]);
 const showDeck = ref(false);
@@ -134,12 +148,13 @@ const theme = ref<'dark' | 'light'>((localStorage.getItem('tarot-theme') as 'dar
 const authMode = ref<'login' | 'register'>('login');
 const authLoading = ref(false);
 const authForm = ref({ name: '', email: '', password: '' });
-const spreadHistory = ref<StoredSpread[]>([]);
-const favoriteSpreads = ref<StoredSpread[]>([]);
+const spreadHistory = ref<CloudSpread[]>([]);
+const favoriteSpreads = ref<CloudSpread[]>([]);
 const shareResult = ref<SharedSpread | null>(null);
 const sharePreviewUrl = ref('');
 const shareLoading = ref(false);
 const isSharedView = ref(false);
+const { flags } = useFeatures();
 
 const activeSpreadDefinition = computed(() => spreadDefinitions.value.find((item) => item.id === activeSpreadType.value));
 
@@ -181,14 +196,6 @@ function toggleTheme() {
   trackEvent('theme_changed', { theme: theme.value });
 }
 
-function cloudEntryToStored(entry: CloudSpread): StoredSpread {
-  return {
-    id: entry.id,
-    title: entry.title,
-    date: new Date(entry.createdAt).toLocaleString('uk-UA'),
-    cards: entry.cards.map((card) => `${card.position}: ${card.card.name}${card.reversed ? ' (перевернута)' : ''}`)
-  };
-}
 
 async function syncUserLists() {
   if (!currentUser.value) {
@@ -202,8 +209,8 @@ async function syncUserLists() {
     fetchCloudSpreads(true)
   ]);
 
-  spreadHistory.value = history.map(cloudEntryToStored);
-  favoriteSpreads.value = favorites.map(cloudEntryToStored);
+  spreadHistory.value = history;
+  favoriteSpreads.value = favorites;
 }
 
 async function loadCards() {
@@ -263,7 +270,7 @@ async function refreshSpread(type: SpreadType = activeSpreadType.value) {
       delay(520)
     ]);
     spread.value = drawnCards;
-    revealKey.value += 1;
+    revealKey.value += flags.value.enhancedReveal ? 1 : 0;
     trackEvent('reading_generated', spreadAnalyticsPayload(spread.value, activeSpreadType.value));
     await generateInterpretation();
     await saveSpreadToHistory(spread.value, definition?.title ?? `Розклад на ${spread.value.length} карт`);
@@ -290,13 +297,21 @@ async function generateInterpretation() {
       spread: spread.value,
       spreadType: activeSpreadType.value,
       tone: interpretationTone.value,
-      source: interpretation.value.provider
+      source: interpretation.value.provider,
+      advancedAiFlag: flags.value.advancedAi
     }));
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'Не вдалося згенерувати тлумачення';
   } finally {
     interpretationLoading.value = false;
   }
+}
+
+function trackPremiumPreviewClick() {
+  trackEvent('premium_preview_clicked', {
+    spreadType: activeSpreadType.value,
+    hasSpread: Boolean(spread.value.length)
+  });
 }
 
 async function setInterpretationTone(tone: InterpretationTone) {
@@ -355,7 +370,7 @@ async function saveSpreadToHistory(cards: DrawnCard[], title: string) {
     favorite: false
   });
 
-  spreadHistory.value.unshift(cloudEntryToStored(saved));
+  spreadHistory.value.unshift(saved);
   spreadHistory.value = spreadHistory.value.slice(0, 20);
 }
 
@@ -376,7 +391,7 @@ async function saveFavoriteSpread() {
       favorite: true
     });
 
-    favoriteSpreads.value.unshift(cloudEntryToStored(saved));
+    favoriteSpreads.value.unshift(saved);
     favoriteSpreads.value = favoriteSpreads.value.slice(0, 12);
     trackEvent('favorite_added', spreadAnalyticsPayload(spread.value, activeSpreadType.value));
     copyStatus.value = 'Розклад додано в обране.';
@@ -385,6 +400,36 @@ async function saveFavoriteSpread() {
   }
 }
 
+
+async function openJournalEntry(entry: CloudSpread) {
+  activeSpreadType.value = entry.spreadType;
+  spread.value = entry.cards;
+  interpretation.value = entry.interpretation;
+  selectorCollapsed.value = true;
+  shareResult.value = null;
+  sharePreviewUrl.value = '';
+  copyStatus.value = 'Розклад відкрито з Книги розкладів.';
+  trackEvent('journal_entry_opened', {
+    id: entry.id,
+    spreadType: entry.spreadType,
+    favorite: entry.favorite,
+    cardsCount: entry.cards.length
+  });
+  await nextTick();
+  boardSection.value?.scrollIntoView();
+}
+
+async function saveJournalNote(payload: { id: string; note: string }) {
+  try {
+    const updated = await updateCloudSpreadNote(payload.id, payload.note);
+    spreadHistory.value = spreadHistory.value.map((item) => item.id === updated.id ? updated : item);
+    favoriteSpreads.value = favoriteSpreads.value.map((item) => item.id === updated.id ? updated : item);
+    trackEvent('journal_note_saved', { id: payload.id, noteLength: payload.note.length });
+    copyStatus.value = 'Нотатку збережено.';
+  } catch (err) {
+    copyStatus.value = err instanceof Error ? err.message : 'Не вдалося зберегти нотатку.';
+  }
+}
 
 async function shareCurrentSpread() {
   if (!spread.value.length) return;
@@ -2258,4 +2303,34 @@ onMounted(async () => {
   }
 }
 
+</style>
+
+<style scoped>
+.hero-v2 {
+  min-height: 360px;
+  display: grid;
+  align-content: center;
+  background:
+    radial-gradient(circle at 20% 20%, rgba(245, 199, 106, 0.24), transparent 32%),
+    radial-gradient(circle at 80% 10%, rgba(165, 103, 255, 0.22), transparent 34%),
+    linear-gradient(135deg, rgba(28, 18, 43, 0.96), rgba(72, 41, 91, 0.92));
+}
+
+.hero-v2 .eyebrow,
+.hero-v2 .subtitle,
+.hero-v2 .hero-hint {
+  color: rgba(255, 250, 240, 0.78);
+}
+
+.hero-v2 h1 {
+  color: #fff8df;
+  text-shadow: 0 0 28px rgba(245, 199, 106, 0.32);
+}
+
+.premium-preview-panel {
+  border-color: rgba(245, 199, 106, 0.34);
+  background:
+    radial-gradient(circle at top right, rgba(245, 199, 106, 0.18), transparent 36%),
+    rgba(34, 24, 51, 0.82);
+}
 </style>

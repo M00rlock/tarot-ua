@@ -86,6 +86,15 @@ export async function markCloudFavorite(id: string, favorite: boolean): Promise<
 }
 
 
+
+export async function updateCloudSpreadNote(id: string, note: string): Promise<CloudSpread> {
+  return parseJson<CloudSpread>(await fetch(`/api/me/spreads/${id}/note`, {
+    method: 'PATCH',
+    headers: { ...baseHeaders, ...authHeaders() },
+    body: JSON.stringify({ note })
+  }), 'Не вдалося зберегти нотатку');
+}
+
 export async function createShareableSpread(input: { title: string; spreadType: SpreadType; cards: DrawnCard[]; interpretation?: SpreadInterpretation | null }): Promise<SharedSpread> {
   return parseJson<SharedSpread>(await fetch('/api/share/spreads', {
     method: 'POST',

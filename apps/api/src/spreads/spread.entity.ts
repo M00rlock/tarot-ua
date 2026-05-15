@@ -22,6 +22,9 @@ export class SpreadEntity {
   @Column({ default: false })
   favorite!: boolean;
 
+  @Column({ type: 'text', nullable: true })
+  note!: string | null;
+
   @ManyToOne(() => UserEntity, (user) => user.spreads, { onDelete: 'CASCADE' })
   user!: UserEntity;
 

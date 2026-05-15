@@ -93,6 +93,21 @@ export function resetAnalyticsUser() {
         return;
     window.posthog.reset();
 }
+export function isFeatureEnabled(key, fallback = false) {
+    if (!IS_BROWSER || !window.posthog?.getFeatureFlag)
+        return fallback;
+    const value = window.posthog.getFeatureFlag(key);
+    if (typeof value === 'boolean')
+        return value;
+    if (typeof value === 'string')
+        return value === 'true' || value === 'enabled' || value === 'variant';
+    return fallback;
+}
+export async function reloadFeatureFlags() {
+    if (!IS_BROWSER || !window.posthog?.reloadFeatureFlags)
+        return;
+    await window.posthog.reloadFeatureFlags();
+}
 export function setAnalyticsOptOut(value) {
     if (!IS_BROWSER)
         return;

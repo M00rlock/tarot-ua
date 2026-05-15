@@ -7,6 +7,8 @@ type PostHogLike = {
   capture: (event: string, properties?: AnalyticsProperties) => void;
   identify: (id: string, properties?: AnalyticsProperties) => void;
   reset: () => void;
+  getFeatureFlag?: (key: string) => boolean | string | undefined;
+  reloadFeatureFlags?: () => void | Promise<void>;
   opt_out_capturing?: () => void;
   opt_in_capturing?: () => void;
 };
@@ -124,6 +126,20 @@ export function identifyUser(user: { id?: string; email?: string; name?: string;
 export function resetAnalyticsUser() {
   if (!IS_BROWSER || !window.posthog) return;
   window.posthog.reset();
+}
+
+export function isFeatureEnabled(key: string, fallback = false) {
+  if (!IS_BROWSER || !window.posthog?.getFeatureFlag) return fallback;
+
+  const value = window.posthog.getFeatureFlag(key);
+  if (typeof value === 'boolean') return value;
+  if (typeof value === 'string') return value === 'true' || value === 'enabled' || value === 'variant';
+  return fallback;
+}
+
+export async function reloadFeatureFlags() {
+  if (!IS_BROWSER || !window.posthog?.reloadFeatureFlags) return;
+  await window.posthog.reloadFeatureFlags();
 }
 
 export function setAnalyticsOptOut(value: boolean) {

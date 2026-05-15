@@ -70,6 +70,13 @@ export async function markCloudFavorite(id, favorite) {
         body: JSON.stringify({ favorite })
     }), 'Не вдалося оновити обране');
 }
+export async function updateCloudSpreadNote(id, note) {
+    return parseJson(await fetch(`/api/me/spreads/${id}/note`, {
+        method: 'PATCH',
+        headers: { ...baseHeaders, ...authHeaders() },
+        body: JSON.stringify({ note })
+    }), 'Не вдалося зберегти нотатку');
+}
 export async function createShareableSpread(input) {
     return parseJson(await fetch('/api/share/spreads', {
         method: 'POST',

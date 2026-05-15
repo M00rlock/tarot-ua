@@ -23,7 +23,8 @@ export class SpreadsService {
       spreadType: body.spreadType,
       cards: body.cards,
       interpretation: body.interpretation ?? null,
-      favorite: body.favorite ?? false
+      favorite: body.favorite ?? false,
+      note: null
     });
 
     return this.spreads.save(spread);
@@ -31,6 +32,11 @@ export class SpreadsService {
 
   async setFavorite(userId: string, id: string, favorite: boolean) {
     await this.spreads.update({ id, userId }, { favorite });
+    return this.spreads.findOneOrFail({ where: { id, userId } });
+  }
+
+  async setNote(userId: string, id: string, note: string) {
+    await this.spreads.update({ id, userId }, { note });
     return this.spreads.findOneOrFail({ where: { id, userId } });
   }
 }

@@ -61,6 +61,7 @@ export interface CloudSpread {
   cards: DrawnCard[];
   interpretation: SpreadInterpretation | null;
   favorite: boolean;
+  note?: string;
   createdAt: string;
 }
 

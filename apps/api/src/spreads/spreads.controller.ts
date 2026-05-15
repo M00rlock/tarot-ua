@@ -27,4 +27,9 @@ export class SpreadsController {
   favorite(@CurrentUser() user: JwtUserPayload, @Param('id') id: string, @Body() body: { favorite: boolean }) {
     return this.spreadsService.setFavorite(user.sub, id, body.favorite);
   }
+
+  @Patch(':id/note')
+  note(@CurrentUser() user: JwtUserPayload, @Param('id') id: string, @Body() body: { note: string }) {
+    return this.spreadsService.setNote(user.sub, id, body.note ?? '');
+  }
 }
