@@ -4,6 +4,7 @@ import type { DrawnCard } from '../src/types';
 describe('cardMeaning', () => {
   const card: DrawnCard = {
     position: 'Present',
+    positionDescription: 'Test position',
     reversed: false,
     card: {
       id: 'the-star',

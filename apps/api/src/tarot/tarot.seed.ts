@@ -40,7 +40,7 @@ export const TAROT_SEED: TarotCard[] = [
   },
   {
     id: 'the-emperor',
-    name: 'Emperador',
+    name: 'Імператор',
     arcana: 'major',
     keywords: ['структура', 'лідерство', 'межі'],
     meaningUpright: 'Порядок і дисципліна дадуть стабільний результат.',
@@ -85,7 +85,7 @@ export const TAROT_SEED: TarotCard[] = [
   },
   {
     id: 'the-hermit',
-    name: 'Отшельник',
+    name: 'Відлюдник',
     arcana: 'major',
     keywords: ['самотність', 'пошук', 'мудрість'],
     meaningUpright: 'Час для рефлексії і пошуку внутрішньої правди.',
@@ -142,7 +142,7 @@ export const TAROT_SEED: TarotCard[] = [
     name: 'Чорт',
     arcana: 'major',
     keywords: ['матеріальність', 'залежність', 'забуття'],
-    meaningUpright: 'Обмеження собою або залежність від матеріального.',
+    meaningUpright: 'Власні обмеження або залежність від матеріального.',
     meaningReversed: 'Визволення від психологічних ланцюгів.',
     image: '/cards/the-devil.svg'
   },
@@ -150,9 +150,9 @@ export const TAROT_SEED: TarotCard[] = [
     id: 'the-tower',
     name: 'Вежа',
     arcana: 'major',
-    keywords: ['катастрофа', 'звільнення', 'озарення'],
-    meaningUpright: 'Раптова зміна розриває позицію ілюзій.',
-    meaningReversed: 'Невдача катастрофи або затримка змін.',
+    keywords: ['руйнування', 'звільнення', 'осяяння'],
+    meaningUpright: 'Раптова зміна руйнує ілюзії.',
+    meaningReversed: 'Уникнення кризи або затримка змін.',
     image: '/cards/the-tower.svg'
   },
   {
@@ -169,7 +169,7 @@ export const TAROT_SEED: TarotCard[] = [
     name: 'Місяць',
     arcana: 'major',
     keywords: ['ілюзія', 'несвідомість', 'страх'],
-    meaningUpright: 'Довіря власній інтуїції серед невизначеності.',
+    meaningUpright: 'Довіряй власній інтуїції серед невизначеності.',
     meaningReversed: 'Ясність приходить при звільненні від страхів.',
     image: '/cards/the-moon.svg'
   },
@@ -186,7 +186,7 @@ export const TAROT_SEED: TarotCard[] = [
     id: 'judgement',
     name: 'Суд',
     arcana: 'major',
-    keywords: ['пробудження', 'звиклик', 'трансформація'],
+    keywords: ['пробудження', 'виклик', 'трансформація'],
     meaningUpright: 'Новий виклик вимагає переоцінки і дії.',
     meaningReversed: 'Відмова від прийняття нової реальності.',
     image: '/cards/judgement.svg'
@@ -204,9 +204,9 @@ export const TAROT_SEED: TarotCard[] = [
   // Молодші Аркани - Палиці (Вогонь)
   {
     id: 'ace-of-wands',
-    name: 'Туз Паличей',
+    name: 'Туз Жезлів',
     arcana: 'minor',
-    suit: 'Палиці',
+    suit: 'Жезли',
     keywords: ['натхнення', 'новий проект', 'енергія'],
     meaningUpright: 'Творча енергія та нові можливості з\'являються.',
     meaningReversed: 'Втрачене натхнення або блокована енергія.',
@@ -214,9 +214,9 @@ export const TAROT_SEED: TarotCard[] = [
   },
   {
     id: 'two-of-wands',
-    name: 'Двійка Паличей',
+    name: 'Двійка Жезлів',
     arcana: 'minor',
-    suit: 'Палиці',
+    suit: 'Жезли',
     keywords: ['планування', 'потенціал', 'рішення'],
     meaningUpright: 'Планування та підготовка до реалізації ідеї.',
     meaningReversed: 'Нерішучість або невдалі плани.',
@@ -224,9 +224,9 @@ export const TAROT_SEED: TarotCard[] = [
   },
   {
     id: 'three-of-wands',
-    name: 'Трійка Паличей',
+    name: 'Трійка Жезлів',
     arcana: 'minor',
-    suit: 'Палиці',
+    suit: 'Жезли',
     keywords: ['розширення', 'дальні подорожі', 'перспектива'],
     meaningUpright: 'Готовність до розширення горизонтів.',
     meaningReversed: 'Обмеженість або страх розширення.',
@@ -234,9 +234,9 @@ export const TAROT_SEED: TarotCard[] = [
   },
   {
     id: 'four-of-wands',
-    name: 'Четвірка Паличей',
+    name: 'Четвірка Жезлів',
     arcana: 'minor',
-    suit: 'Палиці',
+    suit: 'Жезли',
     keywords: ['святкування', 'стабільність', 'гармонія'],
     meaningUpright: 'Радість і святкування досягнутого.',
     meaningReversed: 'Напруженість або дисгармонія у святкуванні.',
@@ -244,39 +244,39 @@ export const TAROT_SEED: TarotCard[] = [
   },
   {
     id: 'five-of-wands',
-    name: 'П\'ятірка Паличей',
+    name: 'П\'ятірка Жезл',
     arcana: 'minor',
-    suit: 'Палиці',
-    keywords: ['конфлікт', 'змаганння', 'випробування'],
+    suit: 'Жезли',
+    keywords: ['конфлікт', 'змагання', 'випробування'],
     meaningUpright: 'Внутрішні або зовнішні конфлікти.',
     meaningReversed: 'Вирішення конфлікту або досягнення компромісу.',
     image: '/cards/five-of-wands.svg'
   },
   {
     id: 'six-of-wands',
-    name: 'Шістка Паличей',
+    name: 'Шістка Жезлів',
     arcana: 'minor',
-    suit: 'Палиці',
-    keywords: ['признання', 'успіх', 'влада'],
+    suit: 'Жезли',
+    keywords: ['визнання', 'успіх', 'влада'],
     meaningUpright: 'Визнання та слава за гарну роботу.',
-    meaningReversed: 'Втрата престижу або несчастя.',
+    meaningReversed: 'Втрата престижу або невдача.',
     image: '/cards/six-of-wands.svg'
   },
   {
     id: 'seven-of-wands',
-    name: 'Сімка Паличей',
+    name: 'Сімка Жезлів',
     arcana: 'minor',
-    suit: 'Палиці',
-    keywords: ['викликання', 'захист', 'опір'],
+    suit: 'Жезли',
+    keywords: ['виклик', 'захист', 'опір'],
     meaningUpright: 'Потрібно постояти за свою позицію.',
-    meaningReversed: 'Здача або втеча від викликання.',
+    meaningReversed: 'Відступ або втеча від виклику.',
     image: '/cards/seven-of-wands.svg'
   },
   {
     id: 'eight-of-wands',
-    name: 'Вісімка Паличей',
+    name: 'Вісімка Жезлів',
     arcana: 'minor',
-    suit: 'Палиці',
+    suit: 'Жезли',
     keywords: ['швидкість', 'комунікація', 'дія'],
     meaningUpright: 'Швидкі розвитки та активна комунікація.',
     meaningReversed: 'Затримка або гальмування процесів.',
@@ -284,29 +284,29 @@ export const TAROT_SEED: TarotCard[] = [
   },
   {
     id: 'nine-of-wands',
-    name: 'Дев\'ятка Паличей',
+    name: 'Дев\'ятка Жезл',
     arcana: 'minor',
-    suit: 'Палиці',
+    suit: 'Жезли',
     keywords: ['витривалість', 'наполегливість', 'близько'],
-    meaningUpright: 'На межі перемоги, але потрібна останній досилок.',
+    meaningUpright: 'Ти на межі перемоги, але потрібне останнє зусилля.',
     meaningReversed: 'Виснаження або відсутність наполегливості.',
     image: '/cards/nine-of-wands.svg'
   },
   {
     id: 'ten-of-wands',
-    name: 'Десятка Паличей',
+    name: 'Десятка Жезлів',
     arcana: 'minor',
-    suit: 'Палиці',
+    suit: 'Жезли',
     keywords: ['обтяження', 'навантаження', 'завдання'],
-    meaningUpright: 'Перевантажена відповідальністю.',
+    meaningUpright: 'Перевантаження відповідальністю.',
     meaningReversed: 'Звільнення від обтяжень.',
     image: '/cards/ten-of-wands.svg'
   },
   {
     id: 'page-of-wands',
-    name: 'Паж Паличей',
+    name: 'Паж Жезлів',
     arcana: 'minor',
-    suit: 'Палиці',
+    suit: 'Жезли',
     keywords: ['молодість', 'енергія', 'кур\'єр'],
     meaningUpright: 'Молодий дух і новини від енергійної особи.',
     meaningReversed: 'Лінивість або затримка повідомлень.',
@@ -314,9 +314,9 @@ export const TAROT_SEED: TarotCard[] = [
   },
   {
     id: 'knight-of-wands',
-    name: 'Лицар Паличей',
+    name: 'Лицар Жезлів',
     arcana: 'minor',
-    suit: 'Палиці',
+    suit: 'Жезли',
     keywords: ['авантюра', 'пристрасть', 'подорож'],
     meaningUpright: 'Авантюристична енергія та пристрасна дія.',
     meaningReversed: 'Імпульсивність або неконтрольована агресія.',
@@ -324,9 +324,9 @@ export const TAROT_SEED: TarotCard[] = [
   },
   {
     id: 'queen-of-wands',
-    name: 'Королева Паличей',
+    name: 'Королева Жезлів',
     arcana: 'minor',
-    suit: 'Палиці',
+    suit: 'Жезли',
     keywords: ['харизма', 'незалежність', 'впевненість'],
     meaningUpright: 'Впевнена і харизматична жінка.',
     meaningReversed: 'Агресія або запеклість.',
@@ -334,9 +334,9 @@ export const TAROT_SEED: TarotCard[] = [
   },
   {
     id: 'king-of-wands',
-    name: 'Король Паличей',
+    name: 'Король Жезлів',
     arcana: 'minor',
-    suit: 'Палиці',
+    suit: 'Жезли',
     keywords: ['лідерство', 'ентузіазм', 'влада'],
     meaningUpright: 'Лідер із пристрастю та енергією.',
     meaningReversed: 'Диктаторство або вибухова агресія.',
@@ -390,8 +390,8 @@ export const TAROT_SEED: TarotCard[] = [
     arcana: 'minor',
     suit: 'Чаші',
     keywords: ['смуток', 'втрата', 'горе'],
-    meaningUpright: 'Період сумності та горя.',
-    meaningReversed: 'Исцеление и улучшение эмоционального состояния.',
+    meaningUpright: 'Період смутку та горя.',
+    meaningReversed: 'Зцілення та покращення емоційного стану.',
     image: '/cards/five-of-cups.svg'
   },
   {
@@ -451,7 +451,7 @@ export const TAROT_SEED: TarotCard[] = [
     suit: 'Чаші',
     keywords: ['молода любов', 'креативність', 'вісті'],
     meaningUpright: 'Молоде кохання або творчі вісті.',
-    meaningReversed: 'Замкненість або відпалі вісті.',
+    meaningReversed: 'Замкненість або затримані вісті.',
     image: '/cards/page-of-cups.svg'
   },
   {
@@ -459,9 +459,9 @@ export const TAROT_SEED: TarotCard[] = [
     name: 'Лицар Чаш',
     arcana: 'minor',
     suit: 'Чаші',
-    keywords: ['романтика', 'мрії', 'наслідування'],
+    keywords: ['романтика', 'мрії', 'ідеалізм'],
     meaningUpright: 'Романтичний і чуттєвий лицар.',
-    meaningReversed: 'Невправна емоціональність або афера.',
+    meaningReversed: 'Нестабільна емоційність або самообман.',
     image: '/cards/knight-of-cups.svg'
   },
   {
@@ -492,8 +492,8 @@ export const TAROT_SEED: TarotCard[] = [
     arcana: 'minor',
     suit: 'Мечі',
     keywords: ['істина', 'ясність', 'нова ідея'],
-    meaningUpright: 'Нова ідея та озарення про істину.',
-    meaningReversed: 'Плутанина або заплутані мислі.',
+    meaningUpright: 'Нова ідея та осяяння щодо істини.',
+    meaningReversed: 'Плутанина або заплутані думки.',
     image: '/cards/ace-of-swords.svg'
   },
   {
@@ -512,8 +512,8 @@ export const TAROT_SEED: TarotCard[] = [
     arcana: 'minor',
     suit: 'Мечі',
     keywords: ['біль', 'розлука', 'страждання'],
-    meaningUpright: 'Період болю та сумності.',
-    meaningReversed: 'Исцеление боли начинается.',
+    meaningUpright: 'Період болю та смутку.',
+    meaningReversed: 'Починається зцілення болю.',
     image: '/cards/three-of-swords.svg'
   },
   {
@@ -582,7 +582,7 @@ export const TAROT_SEED: TarotCard[] = [
     arcana: 'minor',
     suit: 'Мечі',
     keywords: ['катастрофа', 'кінець', 'дно'],
-    meaningUpright: 'Конець брутального періоду та можливість відновлення.',
+    meaningUpright: 'Кінець важкого періоду та можливість відновлення.',
     meaningReversed: 'Все ще в скрутній ситуації.',
     image: '/cards/ten-of-swords.svg'
   },
@@ -611,7 +611,7 @@ export const TAROT_SEED: TarotCard[] = [
     name: 'Королева Мечей',
     arcana: 'minor',
     suit: 'Мечі',
-    keywords: ['інтелект', 'неможність уповільнюватися', 'самостійність'],
+    keywords: ['інтелект', 'ясність меж', 'самостійність'],
     meaningUpright: 'Розумна та спостережлива жінка.',
     meaningReversed: 'Жорстокість чи холодність у судженнях.',
     image: '/cards/queen-of-swords.svg'
@@ -654,7 +654,7 @@ export const TAROT_SEED: TarotCard[] = [
     arcana: 'minor',
     suit: 'Пентаклі',
     keywords: ['робота', 'навичка', 'командна робота'],
-    meaningUpright: 'Совместная работа и признание за мастерство.',
+    meaningUpright: 'Спільна робота та визнання майстерності.',
     meaningReversed: 'Неякісна робота або конфлікти в команді.',
     image: '/cards/three-of-pentacles.svg'
   },
@@ -664,8 +664,8 @@ export const TAROT_SEED: TarotCard[] = [
     arcana: 'minor',
     suit: 'Пентаклі',
     keywords: ['утримання', 'захист', 'жадібність'],
-    meaningUpright: 'Задержание и боязнь потерять материальное.',
-    meaningReversed: 'Отпускание и щедрость.',
+    meaningUpright: 'Утримання та страх втратити матеріальне.',
+    meaningReversed: 'Відпускання контролю та щедрість.',
     image: '/cards/four-of-pentacles.svg'
   },
   {
@@ -675,7 +675,7 @@ export const TAROT_SEED: TarotCard[] = [
     suit: 'Пентаклі',
     keywords: ['бідність', 'турбота', 'позбавлення'],
     meaningUpright: 'Період матеріальних труднощів та тривог.',
-    meaningReversed: 'Виздоровлення з матеріальних проблем.',
+    meaningReversed: 'Відновлення після матеріальних труднощів.',
     image: '/cards/five-of-pentacles.svg'
   },
   {
@@ -694,7 +694,7 @@ export const TAROT_SEED: TarotCard[] = [
     arcana: 'minor',
     suit: 'Пентаклі',
     keywords: ['інвестиція', 'вирощування', 'терпіння'],
-    meaningUpright: 'Терпліво інвестуючи час у розвиток.',
+    meaningUpright: 'Терпляче інвестуй час у розвиток.',
     meaningReversed: 'Втрачена інвестиція або недостатня праця.',
     image: '/cards/seven-of-pentacles.svg'
   },
@@ -703,7 +703,7 @@ export const TAROT_SEED: TarotCard[] = [
     name: 'Вісімка Пентаклей',
     arcana: 'minor',
     suit: 'Пентаклі',
-    keywords: ['навич', 'ремесло', 'вкладання'],
+    keywords: ['навичка', 'ремесло', 'вкладання'],
     meaningUpright: 'Напрацювання навичок та вдосконалення майстерності.',
     meaningReversed: 'Лінь або недостатня підготовка.',
     image: '/cards/eight-of-pentacles.svg'
@@ -715,7 +715,7 @@ export const TAROT_SEED: TarotCard[] = [
     suit: 'Пентаклі',
     keywords: ['достаток', 'матеріальне благо', 'самостійність'],
     meaningUpright: 'Достаток та матеріальний успіх від своїх зусиль.',
-    meaningReversed: 'Втрача достатку або залежність.',
+    meaningReversed: 'Втрата достатку або залежність.',
     image: '/cards/nine-of-pentacles.svg'
   },
   {
@@ -725,7 +725,7 @@ export const TAROT_SEED: TarotCard[] = [
     suit: 'Пентаклі',
     keywords: ['спадок', 'покоління', 'благословення'],
     meaningUpright: 'Матеріальне благословення та сімейний спадок.',
-    meaningReversed: 'Втрача спадку або сімейні конфлікти.',
+    meaningReversed: 'Втрата спадку або сімейні конфлікти.',
     image: '/cards/ten-of-pentacles.svg'
   },
   {
@@ -733,9 +733,9 @@ export const TAROT_SEED: TarotCard[] = [
     name: 'Паж Пентаклей',
     arcana: 'minor',
     suit: 'Пентаклі',
-    keywords: ['учень', 'розвиток', 'посідь'],
+    keywords: ['учень', 'розвиток', 'практичність'],
     meaningUpright: 'Амбітний молодик, який навчається.',
-    meaningReversed: 'Дурість або нежелание учиться.',
+    meaningReversed: 'Неуважність або небажання вчитися.',
     image: '/cards/page-of-pentacles.svg'
   },
   {
@@ -745,7 +745,7 @@ export const TAROT_SEED: TarotCard[] = [
     suit: 'Пентаклі',
     keywords: ['послідовність', 'надійність', 'сум\'язність'],
     meaningUpright: 'Надійний та наполегливий робітник.',
-    meaningReversed: 'Скупість чи чергування.',
+    meaningReversed: 'Скупість або застрягання в рутині.',
     image: '/cards/knight-of-pentacles.svg'
   },
   {
@@ -765,7 +765,7 @@ export const TAROT_SEED: TarotCard[] = [
     suit: 'Пентаклі',
     keywords: ['багатство', 'успіх', 'лідерство'],
     meaningUpright: 'Успішний та матеріально заможний лідер.',
-    meaningReversed: 'Грабіж або розвалення матеріального.',
+    meaningReversed: 'Жадібність або втрата матеріальної стабільності.',
     image: '/cards/king-of-pentacles.svg'
   }
 ];

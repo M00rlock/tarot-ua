@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 300" fill="none">
+  <defs>
+    <linearGradient id="bg-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a1a2e;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#16213e;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="border-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#c9a962;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#e8d5a3;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#c9a962;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="200" height="300" rx="12" fill="url(#bg-gradient)"/>
+  
+  <!-- Border -->
+  <rect x="2" y="2" width="196" height="296" rx="10" stroke="url(#border-gradient)" stroke-width="2" fill="none"/>
+  
+  <!-- Inner border -->
+  <rect x="10" y="10" width="180" height="280" rx="6" stroke="#c9a962" stroke-width="1" fill="none" opacity="0.5"/>
+  
+  <!-- Decorative corners -->
+  <circle cx="20" cy="20" r="4" fill="#c9a962" opacity="0.7"/>
+  <circle cx="180" cy="20" r="4" fill="#c9a962" opacity="0.7"/>
+  <circle cx="20" cy="280" r="4" fill="#c9a962" opacity="0.7"/>
+  <circle cx="180" cy="280" r="4" fill="#c9a962" opacity="0.7"/>
+  
+  <!-- Center symbol -->
+  <g transform="translate(100, 150)">
+    <!-- Crescent moon -->
+    <path d="M-25,-15 Q-15,-25 0,-20 Q15,-25 25,-15 Q20,0 25,15 Q15,25 0,20 Q-15,25 -25,15 Q-20,0 -25,-15" 
+          fill="none" stroke="#c9a962" stroke-width="2" opacity="0.8"/>
+    <!-- Star -->
+    <polygon points="0,-8 2,-3 7,-3 3,1 5,6 0,3 -5,6 -3,1 -7,-3 -2,-3" 
+             fill="#c9a962" opacity="0.6"/>
+  </g>
+  
+  <!-- Bottom decoration -->
+  <text x="100" y="260" text-anchor="middle" fill="#c9a962" font-family="serif" font-size="10" opacity="0.5">
+    ✦ TAROT ✦
+  </text>
+</svg>

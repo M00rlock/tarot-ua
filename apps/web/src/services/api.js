@@ -8,8 +8,19 @@ export async function fetchCards(count = 78) {
     }
     return (await response.json());
 }
-export async function drawSpread(count = 3) {
-    const response = await fetch(`/api/tarot/draw?count=${count}`, { headers: baseHeaders });
+export async function fetchSpreadDefinitions() {
+    const response = await fetch('/api/tarot/spreads', { headers: baseHeaders });
+    if (!response.ok) {
+        throw new Error('Не вдалося завантажити типи розкладів');
+    }
+    return (await response.json());
+}
+export async function drawSpread(count = 3, type) {
+    const params = new URLSearchParams({ count: String(count) });
+    if (type) {
+        params.set('type', type);
+    }
+    const response = await fetch(`/api/tarot/draw?${params.toString()}`, { headers: baseHeaders });
     if (!response.ok) {
         throw new Error('Не вдалося зробити розклад');
     }

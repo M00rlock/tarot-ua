@@ -1,4 +1,4 @@
-import type { DrawnCard, TarotCard } from '../types';
+import type { DrawnCard, SpreadDefinition, SpreadType, TarotCard } from '../types';
 
 const baseHeaders = {
   'Content-Type': 'application/json'
@@ -13,8 +13,23 @@ export async function fetchCards(count = 78): Promise<TarotCard[]> {
   return (await response.json()) as TarotCard[];
 }
 
-export async function drawSpread(count = 3): Promise<DrawnCard[]> {
-  const response = await fetch(`/api/tarot/draw?count=${count}`, { headers: baseHeaders });
+export async function fetchSpreadDefinitions(): Promise<SpreadDefinition[]> {
+  const response = await fetch('/api/tarot/spreads', { headers: baseHeaders });
+  if (!response.ok) {
+    throw new Error('Не вдалося завантажити типи розкладів');
+  }
+
+  return (await response.json()) as SpreadDefinition[];
+}
+
+export async function drawSpread(count = 3, type?: SpreadType): Promise<DrawnCard[]> {
+  const params = new URLSearchParams({ count: String(count) });
+
+  if (type) {
+    params.set('type', type);
+  }
+
+  const response = await fetch(`/api/tarot/draw?${params.toString()}`, { headers: baseHeaders });
   if (!response.ok) {
     throw new Error('Не вдалося зробити розклад');
   }

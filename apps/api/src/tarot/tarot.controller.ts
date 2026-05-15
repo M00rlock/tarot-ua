@@ -1,5 +1,6 @@
 import { Controller, Get, Query } from '@nestjs/common';
 import { TarotService } from './tarot.service';
+import { SpreadType } from './tarot.types';
 
 @Controller('tarot')
 export class TarotController {
@@ -10,9 +11,14 @@ export class TarotController {
     return this.tarotService.getAllCards(count ?? 78);
   }
 
+  @Get('spreads')
+  getSpreads() {
+    return this.tarotService.getSpreadDefinitions();
+  }
+
   @Get('draw')
-  draw(@Query('count') count?: number) {
-    return this.tarotService.drawSpread(count ?? 3);
+  draw(@Query('count') count?: number, @Query('type') type?: SpreadType) {
+    return this.tarotService.drawSpread(Number(count ?? 3), type);
   }
 
   @Get('card-of-day')
