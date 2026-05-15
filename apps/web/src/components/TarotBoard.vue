@@ -2,13 +2,17 @@
   <main class="page">
     <div class="ambient-orb orb-one" aria-hidden="true"></div>
     <div class="ambient-orb orb-two" aria-hidden="true"></div>
-    <header class="hero">
+    <header class="hero hero-ritual">
       <div class="hero-top">
         <p class="eyebrow">Пет-проєкт для портфоліо</p>
         <button class="theme-toggle" type="button" @click="toggleTheme">{{ theme === 'dark' ? '☀️ Світла тема' : '🌙 Mystic тема' }}</button>
       </div>
       <h1>Таро Черіот</h1>
-      <p class="subtitle">Vue + NestJS + JanusGraph. Онлайн-розклади, карта дня та персональна історія.</p>
+      <p class="subtitle">Зосередьтесь на своєму питанні. Оберіть ритуал — і карти відкриються у правильному ритмі.</p>
+      <div class="hero-actions">
+        <button class="btn btn-large" type="button" @click="scrollToRitual">Розпочати розклад</button>
+        <span class="hero-hint">3–5 карт · перевернуті значення · історія</span>
+      </div>
     </header>
 
     <section class="panel auth-panel">
@@ -23,23 +27,42 @@
       </div>
     </section>
 
-    <section class="panel controls-panel">
-      <div>
-        <h2>Оберіть розклад</h2>
-        <p class="muted">Додані тематичні сценарії: класика, пентаграма, кохання та кар’єра.</p>
+    <section ref="ritualSection" class="panel controls-panel ritual-panel" :class="{ collapsed: selectorCollapsed }">
+      <div class="ritual-head">
+        <div>
+          <p class="eyebrow">Вибір ритуалу</p>
+          <h2>Який розклад вас кличе?</h2>
+          <p class="muted">Спочатку оберіть сценарій, далі сторінка сама переведе фокус до карт.</p>
+        </div>
+        <button v-if="selectorCollapsed" class="btn btn-ghost" type="button" @click="selectorCollapsed = false">Змінити розклад</button>
       </div>
-      <div class="spread-selector">
-        <button
-          v-for="definition in spreadDefinitions"
-          :key="definition.id"
-          class="spread-button"
-          :class="{ active: activeSpreadType === definition.id }"
-          :disabled="loading"
-          @click="refreshSpread(definition.id)"
-        >
-          <strong>{{ definition.title }}</strong>
-          <span>{{ definition.count }} карти</span>
-        </button>
+
+      <Transition name="ritual-collapse">
+        <div v-if="!selectorCollapsed" class="spread-selector spread-selector-v2">
+          <button
+            v-for="definition in spreadDefinitions"
+            :key="definition.id"
+            class="spread-button spread-choice"
+            :class="{ active: activeSpreadType === definition.id }"
+            :disabled="loading"
+            @click="chooseSpread(definition.id)"
+          >
+            <span class="choice-icon">{{ spreadMeta(definition.id).icon }}</span>
+            <span class="choice-body">
+              <strong>{{ definition.title }}</strong>
+              <small>{{ spreadMeta(definition.id).description }}</small>
+              <em>{{ definition.count }} карти</em>
+            </span>
+          </button>
+        </div>
+      </Transition>
+
+      <div v-if="selectorCollapsed && activeSpreadDefinition" class="active-ritual-summary">
+        <span>{{ spreadMeta(activeSpreadDefinition.id).icon }}</span>
+        <div>
+          <strong>{{ activeSpreadDefinition.title }}</strong>
+          <small>{{ spreadMeta(activeSpreadDefinition.id).description }}</small>
+        </div>
       </div>
     </section>
 
@@ -60,9 +83,10 @@
       </article>
     </section>
 
-    <section class="panel">
+    <section ref="boardSection" class="panel board-panel" :class="{ 'board-focus': boardPulse }">
       <div class="section-head">
         <div>
+          <p class="eyebrow">Розкриття карт</p>
           <h2>Поточний розклад</h2>
           <p class="muted" v-if="activeSpreadDefinition">{{ activeSpreadDefinition.title }}</p>
         </div>
@@ -72,11 +96,16 @@
         </div>
       </div>
 
-      <div v-if="loading" class="muted">Оновлюю розклад...</div>
+      <div v-if="loading" class="shuffle-stage" aria-live="polite">
+        <div class="shuffle-stack" aria-hidden="true">
+          <span v-for="n in 5" :key="n" class="shuffle-card" :style="{ '--shuffle-index': n - 1 }"></span>
+        </div>
+        <p class="muted">Перемішую колоду...</p>
+      </div>
 
       <div v-else-if="spread.length === 3" class="spread-grid-3">
-        <article v-for="item in spread" :key="`${item.position}-${item.card.id}`" class="card-item">
-          <div class="card-visual">
+        <article v-for="(item, index) in spread" :key="`${item.position}-${item.card.id}-${revealKey}`" class="card-item" :style="revealStyle(index)">
+          <div class="card-visual animated-card">
             <img class="card-image" :class="{ 'is-reversed': item.reversed }" :src="item.card.image" :alt="item.card.name" loading="lazy" @error="setPlaceholderImage" />
             <span v-if="item.reversed" class="reversed-badge">↻ перевернута</span>
           </div>
@@ -90,8 +119,8 @@
 
       <div v-else-if="spread.length === 5" class="spread-layout-clean">
         <div class="spread-board-clean" aria-label="Пентаграма розкладу">
-          <article v-for="(item, index) in spread" :key="`board-${item.position}-${item.card.id}`" class="board-slot" :class="`position-${index}`">
-            <div class="board-card-frame">
+          <article v-for="(item, index) in spread" :key="`board-${item.position}-${item.card.id}-${revealKey}`" class="board-slot" :class="`position-${index}`" :style="revealStyle(index)">
+            <div class="board-card-frame animated-card">
               <img class="board-card-image" :class="{ 'is-reversed': item.reversed }" :src="item.card.image" :alt="item.card.name" loading="lazy" @error="setPlaceholderImage" />
               <span v-if="item.reversed" class="board-reversed">↻</span>
             </div>
@@ -103,7 +132,7 @@
         </div>
 
         <div class="spread-details-clean">
-          <article v-for="(item, index) in spread" :key="`details-${item.position}-${item.card.id}`" class="detail-row">
+          <article v-for="(item, index) in spread" :key="`details-${item.position}-${item.card.id}-${revealKey}`" class="detail-row reveal-detail" :style="detailRevealStyle(index)">
             <span class="detail-number">{{ index + 1 }}</span>
             <div>
               <p class="position">{{ item.position }} <span v-if="item.reversed" class="inline-reversed">/ перевернута</span></p>
@@ -166,7 +195,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
+import { computed, nextTick, onMounted, ref } from 'vue';
 import { drawSpread, fetchCardOfDay, fetchCards, fetchSpreadDefinitions } from '../services/api';
 import { cardMeaning } from '../utils';
 import type { DrawnCard, SpreadDefinition, SpreadType, TarotCard } from '../types';
@@ -184,8 +213,13 @@ const spreadDefinitions = ref<SpreadDefinition[]>([]);
 const activeSpreadType = ref<SpreadType>('classic3');
 const cardOfDay = ref<DrawnCard | null>(null);
 const loading = ref(false);
+const revealKey = ref(0);
 const error = ref('');
 const copyStatus = ref('');
+const ritualSection = ref<HTMLElement | null>(null);
+const boardSection = ref<HTMLElement | null>(null);
+const selectorCollapsed = ref(false);
+const boardPulse = ref(false);
 const currentUser = ref(localStorage.getItem('tarot-user') || '');
 const theme = ref<'dark' | 'light'>((localStorage.getItem('tarot-theme') as 'dark' | 'light') || 'dark');
 const authForm = ref({ name: '' });
@@ -193,6 +227,32 @@ const spreadHistory = ref<StoredSpread[]>(loadUserList('history'));
 const favoriteSpreads = ref<StoredSpread[]>(loadUserList('favorites'));
 
 const activeSpreadDefinition = computed(() => spreadDefinitions.value.find((item) => item.id === activeSpreadType.value));
+
+const spreadMetaMap: Record<SpreadType, { icon: string; description: string }> = {
+  classic3: { icon: '✦', description: 'Минуле, теперішнє і найближчий напрямок.' },
+  pentagram5: { icon: '⛤', description: 'Глибокий огляд ситуації через п’ять позицій.' },
+  love5: { icon: '♡', description: 'Емоції, зв’язок, тінь і можливий розвиток.' },
+  career5: { icon: '♜', description: 'Фокус, ресурси, перешкоди й наступний крок.' }
+};
+
+function spreadMeta(type: SpreadType) {
+  return spreadMetaMap[type];
+}
+
+function scrollToRitual() {
+  ritualSection.value?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+async function chooseSpread(type: SpreadType) {
+  selectorCollapsed.value = true;
+  await refreshSpread(type);
+  await nextTick();
+  boardSection.value?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  boardPulse.value = true;
+  window.setTimeout(() => {
+    boardPulse.value = false;
+  }, 1100);
+}
 
 const todayLabel = new Intl.DateTimeFormat('uk-UA', {
   dateStyle: 'full'
@@ -252,13 +312,30 @@ async function refreshSpread(type: SpreadType = activeSpreadType.value) {
   copyStatus.value = '';
 
   try {
-    spread.value = await drawSpread(definition?.count ?? 3, type);
+    const [drawnCards] = await Promise.all([
+      drawSpread(definition?.count ?? 3, type),
+      delay(520)
+    ]);
+    spread.value = drawnCards;
+    revealKey.value += 1;
     saveSpreadToHistory(spread.value, definition?.title ?? `Розклад на ${spread.value.length} карт`);
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'Сталася помилка';
   } finally {
     loading.value = false;
   }
+}
+
+function delay(ms: number) {
+  return new Promise((resolve) => window.setTimeout(resolve, ms));
+}
+
+function revealStyle(index: number) {
+  return { '--reveal-delay': `${index * 140}ms` };
+}
+
+function detailRevealStyle(index: number) {
+  return { '--reveal-delay': `${520 + index * 95}ms` };
 }
 
 function login() {
@@ -335,6 +412,7 @@ onMounted(async () => {
   try {
     await Promise.all([loadCards(), loadCardOfDay(), loadSpreadDefinitions()]);
     await refreshSpread('classic3');
+    selectorCollapsed.value = false;
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'Сталася помилка';
   }
@@ -1397,6 +1475,383 @@ onMounted(async () => {
 @keyframes float-orb {
   from { transform: translate3d(0, 0, 0) scale(1); }
   to { transform: translate3d(2rem, -1.5rem, 0) scale(1.08); }
+}
+
+
+/* Card reveal / shuffle animations */
+.shuffle-stage {
+  display: grid;
+  place-items: center;
+  gap: 0.9rem;
+  min-height: 210px;
+  padding: 1.25rem;
+}
+
+.shuffle-stack {
+  position: relative;
+  width: 112px;
+  height: 168px;
+  perspective: 900px;
+}
+
+.shuffle-card {
+  --shuffle-index: 0;
+  position: absolute;
+  inset: 0;
+  border-radius: 16px;
+  border: 1px solid rgba(244, 211, 139, 0.42);
+  background:
+    radial-gradient(circle at 50% 42%, rgba(230, 182, 106, 0.26), transparent 35%),
+    linear-gradient(135deg, rgba(33, 21, 55, 0.96), rgba(98, 59, 125, 0.92));
+  box-shadow:
+    0 18px 36px rgba(0, 0, 0, 0.28),
+    0 0 26px rgba(140, 104, 255, 0.14);
+  transform-origin: center;
+  animation: shuffle-card 780ms ease-in-out infinite;
+  animation-delay: calc(var(--shuffle-index) * -115ms);
+}
+
+.shuffle-card::before,
+.shuffle-card::after {
+  content: '';
+  position: absolute;
+  inset: 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(244, 211, 139, 0.34);
+}
+
+.shuffle-card::after {
+  inset: 22px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(244, 211, 139, 0.24), transparent 62%);
+}
+
+.animated-card {
+  transform-origin: center;
+  transform-style: preserve-3d;
+  animation: tarot-flip-reveal 780ms cubic-bezier(0.2, 0.75, 0.2, 1) both;
+  animation-delay: var(--reveal-delay, 0ms);
+  will-change: transform, opacity, filter;
+}
+
+.animated-card::before {
+  content: '';
+  position: absolute;
+  inset: 0.22rem;
+  border-radius: inherit;
+  z-index: 3;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 50% 42%, rgba(230, 182, 106, 0.26), transparent 36%),
+    linear-gradient(135deg, rgba(33, 21, 55, 0.96), rgba(98, 59, 125, 0.92));
+  border: 1px solid rgba(244, 211, 139, 0.28);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+  animation: card-back-hide 780ms cubic-bezier(0.2, 0.75, 0.2, 1) both;
+  animation-delay: var(--reveal-delay, 0ms);
+}
+
+.animated-card::after {
+  content: '✦';
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  display: grid;
+  place-items: center;
+  color: rgba(255, 244, 209, 0.88);
+  font-size: 1.35rem;
+  pointer-events: none;
+  animation: card-back-hide 780ms cubic-bezier(0.2, 0.75, 0.2, 1) both;
+  animation-delay: var(--reveal-delay, 0ms);
+}
+
+.reveal-detail {
+  opacity: 0;
+  transform: translateY(10px);
+  animation: detail-rise 520ms ease both;
+  animation-delay: var(--reveal-delay, 520ms);
+}
+
+.board-slot,
+.card-item {
+  perspective: 900px;
+}
+
+@keyframes shuffle-card {
+  0% {
+    transform: translateX(-18px) rotate(-9deg) rotateY(0deg);
+    z-index: 1;
+  }
+  45% {
+    transform: translateX(22px) rotate(10deg) rotateY(18deg) translateY(-4px);
+    z-index: 5;
+  }
+  100% {
+    transform: translateX(-18px) rotate(-9deg) rotateY(0deg);
+    z-index: 1;
+  }
+}
+
+@keyframes tarot-flip-reveal {
+  0% {
+    opacity: 0;
+    transform: rotateY(180deg) translateY(14px) scale(0.88);
+    filter: blur(2px) saturate(0.8);
+  }
+  45% {
+    opacity: 1;
+    transform: rotateY(92deg) translateY(-4px) scale(1.03);
+    filter: blur(0) saturate(1.1);
+  }
+  100% {
+    opacity: 1;
+    transform: rotateY(0deg) translateY(0) scale(1);
+    filter: blur(0) saturate(1);
+  }
+}
+
+@keyframes card-back-hide {
+  0%, 48% {
+    opacity: 1;
+  }
+  52%, 100% {
+    opacity: 0;
+  }
+}
+
+@keyframes detail-rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+:global([data-theme='light']) .shuffle-card,
+:global([data-theme='light']) .animated-card::before {
+  background:
+    radial-gradient(circle at 50% 42%, rgba(159, 90, 43, 0.22), transparent 36%),
+    linear-gradient(135deg, #8f4f2a, #c28a52);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shuffle-card,
+  .animated-card,
+  .animated-card::before,
+  .animated-card::after,
+  .reveal-detail {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
+
+
+/* Ritual selection flow v2 */
+.hero-ritual {
+  min-height: min(78vh, 720px);
+  display: grid;
+  align-content: center;
+}
+
+.hero-actions {
+  display: flex;
+  gap: 0.9rem;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-top: 1.35rem;
+}
+
+.btn-large {
+  padding: 0.95rem 1.35rem;
+  font-size: 1rem;
+}
+
+.hero-hint {
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+.ritual-panel {
+  scroll-margin-top: 1rem;
+  transition: transform 220ms ease, opacity 220ms ease, box-shadow 220ms ease;
+}
+
+.ritual-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: start;
+}
+
+.ritual-head h2 {
+  margin-bottom: 0.35rem;
+}
+
+.spread-selector-v2 {
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  margin-top: 0.9rem;
+}
+
+.spread-choice {
+  position: relative;
+  min-height: 136px;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.85rem;
+  align-items: start;
+  padding: 1rem;
+  overflow: hidden;
+  isolation: isolate;
+  transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+}
+
+.spread-choice::before {
+  content: '';
+  position: absolute;
+  inset: -45% -20% auto auto;
+  width: 8rem;
+  height: 8rem;
+  border-radius: 999px;
+  background: radial-gradient(circle, rgba(230, 182, 106, 0.22), transparent 68%);
+  opacity: 0;
+  transition: opacity 180ms ease, transform 180ms ease;
+  z-index: -1;
+}
+
+.spread-choice:hover:not(:disabled) {
+  transform: translateY(-3px);
+  border-color: rgba(244, 211, 139, 0.62);
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.28), 0 0 28px rgba(140, 104, 255, 0.15);
+}
+
+.spread-choice:hover:not(:disabled)::before,
+.spread-choice.active::before {
+  opacity: 1;
+  transform: scale(1.12);
+}
+
+.choice-icon {
+  width: 2.45rem;
+  height: 2.45rem;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  color: var(--gold-strong);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(230, 182, 106, 0.25);
+  font-size: 1.15rem;
+  box-shadow: 0 0 22px rgba(230, 182, 106, 0.08);
+}
+
+.choice-body {
+  display: grid;
+  gap: 0.32rem;
+}
+
+.choice-body strong {
+  color: var(--ink);
+  font-size: 1rem;
+}
+
+.choice-body small {
+  color: var(--muted);
+  font-size: 0.84rem;
+  line-height: 1.35;
+}
+
+.choice-body em {
+  width: max-content;
+  margin-top: 0.2rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 999px;
+  color: var(--gold-strong);
+  background: rgba(230, 182, 106, 0.11);
+  border: 1px solid rgba(230, 182, 106, 0.16);
+  font-style: normal;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.active-ritual-summary {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  margin-top: 0.9rem;
+  padding: 0.8rem 0.95rem;
+  border-radius: 16px;
+  border: 1px solid rgba(230, 182, 106, 0.2);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.active-ritual-summary > span {
+  width: 2.25rem;
+  height: 2.25rem;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  color: var(--gold-strong);
+  background: rgba(230, 182, 106, 0.1);
+}
+
+.active-ritual-summary strong,
+.active-ritual-summary small {
+  display: block;
+}
+
+.active-ritual-summary small {
+  margin-top: 0.15rem;
+  color: var(--muted);
+}
+
+.board-panel {
+  scroll-margin-top: 1rem;
+  transition: box-shadow 280ms ease, transform 280ms ease;
+}
+
+.board-panel.board-focus {
+  transform: translateY(-2px);
+  box-shadow:
+    0 26px 80px var(--shadow),
+    0 0 0 1px rgba(244, 211, 139, 0.22),
+    0 0 58px rgba(230, 182, 106, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+.ritual-collapse-enter-active,
+.ritual-collapse-leave-active {
+  transition: opacity 220ms ease, transform 220ms ease, max-height 260ms ease;
+  overflow: hidden;
+  max-height: 520px;
+}
+
+.ritual-collapse-enter-from,
+.ritual-collapse-leave-to {
+  opacity: 0;
+  transform: translateY(-8px);
+  max-height: 0;
+}
+
+@media (max-width: 620px) {
+  .hero-ritual {
+    min-height: 68vh;
+  }
+
+  .hero-actions,
+  .ritual-head {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .spread-selector-v2 {
+    grid-template-columns: 1fr;
+  }
+
+  .spread-choice {
+    min-height: 118px;
+  }
 }
 
 </style>
