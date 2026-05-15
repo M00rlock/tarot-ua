@@ -1,4 +1,4 @@
-import type { AuthSession, AuthUser, CloudSpread, DrawnCard, InterpretationTone, SpreadDefinition, SpreadInterpretation, SpreadType, TarotCard } from '../types';
+import type { AuthSession, AuthUser, CloudSpread, DrawnCard, InterpretationTone, SharedSpread, SpreadDefinition, SpreadInterpretation, SpreadType, TarotCard } from '../types';
 
 const tokenKey = 'tarot-access-token';
 
@@ -83,6 +83,21 @@ export async function markCloudFavorite(id: string, favorite: boolean): Promise<
     headers: { ...baseHeaders, ...authHeaders() },
     body: JSON.stringify({ favorite })
   }), 'Не вдалося оновити обране');
+}
+
+
+export async function createShareableSpread(input: { title: string; spreadType: SpreadType; cards: DrawnCard[]; interpretation?: SpreadInterpretation | null }): Promise<SharedSpread> {
+  return parseJson<SharedSpread>(await fetch('/api/share/spreads', {
+    method: 'POST',
+    headers: baseHeaders,
+    body: JSON.stringify(input)
+  }), 'Не вдалося створити публічне посилання');
+}
+
+export async function fetchSharedSpread(slug: string): Promise<SharedSpread> {
+  return parseJson<SharedSpread>(await fetch(`/api/share/spreads/${encodeURIComponent(slug)}`, {
+    headers: baseHeaders
+  }), 'Публічний розклад не знайдено');
 }
 
 export async function fetchCards(count = 78): Promise<TarotCard[]> {

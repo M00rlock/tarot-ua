@@ -125,3 +125,25 @@ If routes still look missing, kill the old process on port 3000:
 ```bash
 lsof -ti :3000 | xargs kill -9
 ```
+
+
+## Shareable spreads
+
+Публічні розклади працюють через PostgreSQL.
+
+```bash
+docker compose up -d db
+npm run dev
+```
+
+Перевірка API:
+
+```bash
+curl http://localhost:3000/api/share/spreads/non-existent
+```
+
+У застосунку натисни **📸 Поділитись** біля поточного розкладу. Буде створено:
+
+- short URL: `/share/:slug`
+- PNG preview у браузері
+- social card SVG: `/api/share/spreads/:slug/social-card.svg`

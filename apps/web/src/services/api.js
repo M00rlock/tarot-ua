@@ -70,6 +70,18 @@ export async function markCloudFavorite(id, favorite) {
         body: JSON.stringify({ favorite })
     }), 'Не вдалося оновити обране');
 }
+export async function createShareableSpread(input) {
+    return parseJson(await fetch('/api/share/spreads', {
+        method: 'POST',
+        headers: baseHeaders,
+        body: JSON.stringify(input)
+    }), 'Не вдалося створити публічне посилання');
+}
+export async function fetchSharedSpread(slug) {
+    return parseJson(await fetch(`/api/share/spreads/${encodeURIComponent(slug)}`, {
+        headers: baseHeaders
+    }), 'Публічний розклад не знайдено');
+}
 export async function fetchCards(count = 78) {
     return parseJson(await fetch(`/api/tarot/cards?count=${count}`, { headers: baseHeaders }), 'Не вдалося завантажити карти');
 }
