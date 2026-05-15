@@ -301,6 +301,8 @@ function trackPremiumPreviewClick() {
 }
 
 async function setInterpretationTone(tone: InterpretationTone) {
+  if (interpretationTone.value === tone) return;
+
   interpretationTone.value = tone;
   trackEvent('interpretation_tone_changed', { tone });
   await generateInterpretation();
@@ -569,17 +571,6 @@ onMounted(async () => {
 }
 
 .hero {
-  position: relative;
-  overflow: hidden;
-
-  max-width: 1100px;
-  margin-inline: auto;
-
-  padding:
-    clamp(3rem, 8vw, 7rem)
-    clamp(1.25rem, 5vw, 4rem);
-
-  border-radius: 32px;
   padding: 1.5rem;
   background: linear-gradient(135deg, #fff9ed 0%, #f4e0bd 100%);
 }
@@ -604,33 +595,8 @@ onMounted(async () => {
 }
 
 .hero h1 {
-  max-width: 10ch;
-
-  margin:
-    0 auto
-    1.25rem;
-
-  font-size: clamp(3.2rem, 9vw, 6.5rem);
-
-  line-height: 0.92;
-
-  letter-spacing: -0.06em;
-
-  text-wrap: balance;
-}
-
-.subtitle {
-  max-width: 720px;
-
-  margin:
-    0 auto
-    2rem;
-
-  font-size: clamp(1.05rem, 2vw, 1.22rem);
-
-  line-height: 1.7;
-
-  color: var(--muted);
+  margin-bottom: 0.35rem;
+  font-size: clamp(1.9rem, 4vw, 3rem);
 }
 
 .subtitle,
@@ -1411,7 +1377,6 @@ onMounted(async () => {
   isolation: isolate;
 }
 
-
 .ambient-orb {
   position: fixed;
   z-index: -1;
@@ -1422,7 +1387,6 @@ onMounted(async () => {
   filter: blur(28px);
   opacity: 0.42;
   animation: float-orb 12s ease-in-out infinite alternate;
-  filter: blur(72px);
 }
 
 .orb-one {
@@ -1798,6 +1762,12 @@ onMounted(async () => {
   }
 }
 
+:global([data-theme='light']) .shuffle-card,
+:global([data-theme='light']) .animated-card::before {
+  background:
+    radial-gradient(circle at 50% 42%, rgba(159, 90, 43, 0.22), transparent 36%),
+    linear-gradient(135deg, #8f4f2a, #c28a52);
+}
 
 @media (prefers-reduced-motion: reduce) {
   .shuffle-card,
@@ -1821,35 +1791,15 @@ onMounted(async () => {
 
 .hero-actions {
   display: flex;
+  gap: 0.9rem;
   flex-wrap: wrap;
-  justify-content: center;
   align-items: center;
-
-  gap: 1rem;
+  margin-top: 1.35rem;
 }
 
 .btn-large {
-  min-height: 58px;
-
-  padding:
-    0.95rem
-    1.5rem;
-
-  border-radius: 999px;
-
+  padding: 0.95rem 1.35rem;
   font-size: 1rem;
-  font-weight: 800;
-
-  transition:
-    transform .22s ease,
-    box-shadow .22s ease;
-}
-
-.btn-large:hover {
-  transform: translateY(-2px);
-
-  box-shadow:
-    0 14px 34px rgba(140, 104, 255, 0.22);
 }
 
 .hero-hint {
@@ -2168,6 +2118,68 @@ onMounted(async () => {
     linear-gradient(135deg, rgba(125, 76, 255, 0.16), rgba(186, 123, 50, 0.1));
 }
 
+:global([data-theme='light']) .interpretation-summary,
+:global([data-theme='light']) .interpretation-energy,
+:global([data-theme='light']) .interpretation-block,
+:global([data-theme='light']) .next-step {
+  background: #fff8f0;
+  border-color: #e3c6a7;
+}
+
+:global([data-theme='light']) .interpretation-summary p,
+:global([data-theme='light']) .interpretation-energy p,
+:global([data-theme='light']) .interpretation-block p,
+:global([data-theme='light']) .next-step p,
+:global([data-theme='light']) .interpretation-block li {
+  color: #3d3126;
+}
+
+
+
+.interpretation-panel {
+  position: relative;
+  transition:
+    opacity 0.2s ease,
+    filter 0.2s ease;
+}
+
+.interpretation-panel.is-loading .interpretation-card {
+  opacity: 0.72;
+  filter: saturate(0.86);
+  transition:
+    opacity 0.2s ease,
+    filter 0.2s ease;
+}
+
+.interpretation-panel.is-loading .tone-button:disabled.active {
+  opacity: 1;
+}
+
+.interpretation-refresh {
+  position: absolute;
+  right: 1.15rem;
+  bottom: 1.15rem;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  border: 1px solid rgba(244, 211, 139, 0.26);
+  border-radius: 999px;
+  padding: 0.5rem 0.75rem;
+  background: rgba(16, 11, 31, 0.88);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.28);
+  color: var(--gold-strong);
+  font-size: 0.78rem;
+  font-weight: 800;
+  backdrop-filter: blur(14px);
+}
+
+.spinner-orb-small {
+  width: 1rem;
+  height: 1rem;
+  box-shadow: 0 0 18px rgba(140, 104, 255, 0.2), 0 0 14px rgba(230, 182, 106, 0.12);
+}
+
 @keyframes interpretation-pulse {
   from { transform: scale(0.92) rotate(0deg); opacity: 0.78; }
   to { transform: scale(1.06) rotate(18deg); opacity: 1; }
@@ -2305,67 +2317,4 @@ onMounted(async () => {
     radial-gradient(circle at top right, rgba(245, 199, 106, 0.18), transparent 36%),
     rgba(34, 24, 51, 0.82);
 }
-
-.card-item {
-  position: relative;
-  overflow: hidden;
-  transition:
-    transform 0.22s ease,
-    border-color 0.22s ease,
-    box-shadow 0.22s ease;
-}
-
-.card-item::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background:
-    radial-gradient(circle at 50% 0%, rgba(244, 211, 139, 0.08), transparent 42%);
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.22s ease;
-}
-
-.card-item:hover {
-  transform: translateY(-3px);
-  border-color: rgba(244, 211, 139, 0.42);
-  box-shadow:
-    0 26px 76px rgba(0, 0, 0, 0.42),
-    0 0 0 1px rgba(244, 211, 139, 0.08) inset;
-}
-
-.card-item:hover::before {
-  opacity: 1;
-}
-
-.card-visual {
-  position: relative;
-  overflow: hidden;
-  border-radius: var(--radius-lg);
-  background:
-    radial-gradient(circle at 50% 0%, rgba(244, 211, 139, 0.12), transparent 44%),
-    rgba(255, 255, 255, 0.045);
-}
-
-.card-image {
-  transition:
-    transform 0.28s ease,
-    filter 0.28s ease;
-}
-
-.card-item:hover .card-image {
-  transform: translateY(-2px) scale(1.015);
-  filter:
-    drop-shadow(0 18px 26px rgba(0, 0, 0, 0.28))
-    saturate(1.05);
-}
-
-.card-image.is-reversed {
-  transform: rotate(180deg);
-}
-
-.card-item:hover .card-image.is-reversed {
-  transform: rotate(180deg) translateY(2px) scale(1.015);
-}
-
 </style>

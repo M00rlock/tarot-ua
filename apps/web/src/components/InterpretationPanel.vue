@@ -1,5 +1,5 @@
 <template>
-  <section v-if="hasSpread" class="panel interpretation-panel">
+  <section v-if="hasSpread" class="panel interpretation-panel" :class="{ 'is-loading': loading }">
     <div class="section-head interpretation-head">
       <div>
         <p class="eyebrow">AI-тлумачення <span v-if="interpretation?.provider" class="provider-pill">{{ interpretation.provider === 'llm' ? 'LLM' : 'fallback' }}</span></p>
@@ -21,12 +21,12 @@
       </div>
     </div>
 
-    <div v-if="loading" class="interpretation-loading">
+    <div v-if="loading && !interpretation" class="interpretation-loading">
       <span class="spinner-orb" aria-hidden="true"></span>
       <p>Зчитую взаємодію карт...</p>
     </div>
 
-    <article v-else-if="interpretation" class="interpretation-card">
+    <article v-if="interpretation" class="interpretation-card">
       <div class="interpretation-summary">
         <h3>{{ interpretation.title }}</h3>
         <p>{{ interpretation.summary }}</p>
@@ -62,6 +62,11 @@
         <p>{{ interpretation.nextStep }}</p>
       </div>
     </article>
+
+    <div v-if="loading && interpretation" class="interpretation-refresh" aria-live="polite">
+      <span class="spinner-orb spinner-orb-small" aria-hidden="true"></span>
+      <span>Оновлюю тон тлумачення...</span>
+    </div>
   </section>
 </template>
 
