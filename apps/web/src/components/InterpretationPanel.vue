@@ -2,7 +2,7 @@
   <section v-if="hasSpread" class="panel interpretation-panel">
     <div class="section-head interpretation-head">
       <div>
-        <p class="eyebrow">AI-тлумачення</p>
+        <p class="eyebrow">AI-тлумачення <span v-if="interpretation?.provider" class="provider-pill">{{ interpretation.provider === 'llm' ? 'LLM' : 'fallback' }}</span></p>
         <h2>Цілісне прочитання розкладу</h2>
         <p class="muted">Не просто значення карт окремо — а зв’язки, напруга, порада й наступний крок.</p>
       </div>

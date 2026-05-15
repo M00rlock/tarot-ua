@@ -1,6 +1,7 @@
 import { TAROT_SEED } from '../src/tarot/tarot.seed';
 import { TarotGraphService } from '../src/tarot/tarot.graph.service';
 import { TarotService } from '../src/tarot/tarot.service';
+import { LlmInterpretationService } from '../src/tarot/llm-interpretation.service';
 
 describe('TarotService', () => {
   let service: TarotService;
@@ -11,7 +12,12 @@ describe('TarotService', () => {
       seedIfNeeded: async () => undefined
     };
 
-    service = new TarotService(graphStub as TarotGraphService);
+    const llmStub: Partial<LlmInterpretationService> = {
+      generate: async () => null,
+      isConfigured: () => false
+    };
+
+    service = new TarotService(graphStub as TarotGraphService, llmStub as LlmInterpretationService);
   });
 
   it('returns requested spread size with unique cards', async () => {

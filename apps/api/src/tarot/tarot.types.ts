@@ -30,6 +30,7 @@ export interface SpreadDefinition {
 
 
 export type InterpretationTone = 'psychological' | 'mystic' | 'practical';
+export type InterpretationProvider = 'rule-based' | 'llm';
 
 export interface SpreadInterpretation {
   title: string;
@@ -40,4 +41,5 @@ export interface SpreadInterpretation {
   advice: string[];
   shadow: string;
   nextStep: string;
+  provider?: InterpretationProvider;
 }
