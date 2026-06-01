@@ -234,7 +234,10 @@ export class FastSession extends HTMLElement {
     `).join('');
 
     status.textContent = '';
-    setTimeout(() => section.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+    requestAnimationFrame(() => {
+      const titleEl = this.shadowRoot.getElementById('spread-title');
+      if (titleEl) titleEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
   }
 
   renderInterpretation() {
@@ -272,7 +275,10 @@ export class FastSession extends HTMLElement {
     }
 
     content.innerHTML = html || '<p style="color:rgba(200,185,230,0.5);text-align:center">Тлумачення готується...</p>';
-    setTimeout(() => section.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 100);
+    requestAnimationFrame(() => {
+      const header = section.querySelector('.mystic-panel-header');
+      if (header) header.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    });
   }
 
   showLoading(show) {
