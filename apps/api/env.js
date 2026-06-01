@@ -1,9 +1,9 @@
-import { existsSync, readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+const { existsSync, readFileSync } = require('node:fs');
+const { resolve } = require('node:path');
 
 const candidates = [
+  resolve(__dirname, '.env'),
   resolve(process.cwd(), '.env'),
-  resolve(process.cwd(), 'apps/api/.env')
 ];
 
 for (const file of candidates) {

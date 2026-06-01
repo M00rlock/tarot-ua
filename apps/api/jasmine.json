@@ -1,6 +1,0 @@
-{
-  "spec_dir": "spec",
-  "spec_files": ["**/*.spec.ts"],
-  "helpers": ["helpers/**/*.ts"],
-  "requires": ["ts-node/register", "reflect-metadata"]
-}
