@@ -5,10 +5,10 @@ import { saveSpreadSession, loadSpreadSession, saveInterpretationSession, loadIn
 import { trackEvent } from '../analytics/analytics.js';
 
 const SPREAD_META = [
-  { id: 'classic3', icon: '✦', name: 'Три карти', kicker: 'Класичний' },
-  { id: 'pentagram5', icon: '✧', name: 'Пентаграма', kicker: 'Глибокий' },
-  { id: 'love5', icon: '♡', name: 'Стосунки', kicker: 'Почуття' },
-  { id: 'career5', icon: '⚜', name: 'Карʼєра', kicker: 'Шлях' }
+  { id: 'classic3', icon: '✦', card: 'the-magician', name: 'Три карти', kicker: 'Класичний' },
+  { id: 'pentagram5', icon: '✧', card: 'the-world', name: 'Пентаграма', kicker: 'Глибокий' },
+  { id: 'love5', icon: '♡', card: 'the-lovers', name: 'Стосунки', kicker: 'Почуття' },
+  { id: 'career5', icon: '⚜', card: 'ace-of-pentacles', name: 'Карʼєра', kicker: 'Шлях' }
 ];
 
 const RUNES = ['ᚠ', 'ᚢ', 'ᚦ', 'ᚨ', 'ᚱ', 'ᚲ', 'ᚷ', 'ᚹ', 'ᚺ', 'ᚾ', 'ᛁ', 'ᛃ', 'ᛇ', 'ᛈ', 'ᛉ', 'ᛊ', 'ᛏ', 'ᛒ', 'ᛖ', 'ᛗ', 'ᛚ', 'ᛝ', 'ᛟ', 'ᛞ'];
@@ -130,6 +130,7 @@ export class FastSession extends HTMLElement {
     const grid = this.shadowRoot.getElementById('spread-grid');
     grid.innerHTML = SPREAD_META.map((s) => `
       <div class="mystic-spread-card" data-id="${s.id}">
+        <img src="/cards/${s.card}.svg" alt="" class="mystic-spread-mini-card" loading="lazy" onerror="this.style.display='none'">
         <span class="icon">${s.icon}</span>
         <span class="name">${s.name}</span>
         <span class="kicker">${s.kicker}</span>
