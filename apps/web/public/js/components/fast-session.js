@@ -230,7 +230,7 @@ export class FastSession extends HTMLElement {
 
     container.innerHTML = this.spread.map((item, i) => `
       <div class="mystic-card-slot revealing" style="animation-delay:${i * 0.2}s">
-        <img src="/cards/${item.card.image}" alt="${item.card.name}"
+        <img src="${item.card.image}" alt="${item.card.name}"
           loading="lazy"
           onerror="this.src='/cards/tarot-placeholder.svg'">
         <div class="position">${item.position}</div>
