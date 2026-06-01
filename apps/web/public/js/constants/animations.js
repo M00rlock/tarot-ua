@@ -1,0 +1,3 @@
+export const CARD_REVEAL_DELAY_STEP = 140;
+export const DETAIL_REVEAL_OFFSET = 520;
+export const DETAIL_REVEAL_DELAY_STEP = 95;

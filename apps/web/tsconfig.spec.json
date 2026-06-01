@@ -1,9 +1,0 @@
-{
-  "extends": "./tsconfig.json",
-  "compilerOptions": {
-    "module": "CommonJS",
-    "moduleResolution": "Node",
-    "types": ["node", "jasmine"]
-  },
-  "include": ["src/**/*.ts", "spec/**/*.ts"]
-}
