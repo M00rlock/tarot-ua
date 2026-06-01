@@ -240,6 +240,35 @@ export class FastSession extends HTMLElement {
     });
   }
 
+  energyTag(description) {
+    if (!description) return 'medium';
+    const d = description.toLowerCase();
+    if (/напружен|інтенси|бурхлив|пристрасн|вогнян/i.test(d)) return 'intense';
+    if (/спокійн|гармоні|ясн|легк|м'як/i.test(d)) return 'high';
+    if (/застій|важк|туман|мряк/i.test(d)) return 'low';
+    return 'medium';
+  }
+
+  energyIcon(tag) {
+    const icons = { high: '🌿', medium: '🌊', low: '🌙', intense: '⚡' };
+    return icons[tag] || '🌊';
+  }
+
+  extractKeyMessage(text) {
+    if (!text) return '';
+    const cleaned = text.replace(/<[^>]+>/g, '');
+    const sentences = cleaned.match(/[^.!?]+[.!?]+/g) || [cleaned];
+    return sentences.slice(0, 2).join(' ').trim();
+  }
+
+  shortInsight(text) {
+    if (!text) return '';
+    const cleaned = text.replace(/<[^>]+>/g, '');
+    const words = cleaned.split(/\s+/).filter(Boolean);
+    if (words.length <= 15) return cleaned;
+    return words.slice(0, 15).join(' ') + '…';
+  }
+
   renderInterpretation() {
     if (!this.interpretation) return;
     const section = this.shadowRoot.getElementById('interpretation-section');
@@ -248,33 +277,76 @@ export class FastSession extends HTMLElement {
     content.className = 'mystic-interp revealing';
 
     const interp = this.interpretation;
-    let html = '';
+    const energyTag = this.energyTag(interp.energy);
+    const keyMsg = this.extractKeyMessage(interp.summary);
+    const energyShort = interp.energy ? interp.energy.replace(/<[^>]+>/g, '').split(/[.;]/)[0] : '';
+    const cardGlances = (this.spread || []).map((item) => `
+      <div class="mystic-card-glance-item">
+        <span class="mini-icon">${item.reversed ? '⇄' : '🂠'}</span>
+        <div class="mini-position">${item.position}</div>
+        <span class="mini-name">${item.card.name}</span>
+        <div class="mini-insight">${this.shortInsight(cardMeaning(item))}</div>
+      </div>
+    `).join('');
 
+    let glanceHtml = `
+      <div class="mystic-quick-glance">
+        <div class="mystic-glance-row">
+          <span class="mystic-energy-badge ${energyTag}">${this.energyIcon(energyTag)} ${energyShort}</span>
+        </div>
+        <div class="mystic-key-message">${keyMsg || interp.summary || ''}</div>
+        ${cardGlances ? `<div class="mystic-card-glance">${cardGlances}</div>` : ''}
+      </div>
+    `;
+
+    let fullHtml = '';
     if (interp.summary) {
-      html += `<div class="summary">${interp.summary}</div>`;
+      fullHtml += `<div class="summary">${interp.summary}</div>`;
     }
-
     if (interp.energy) {
-      html += `<section><h3>Енергія розкладу</h3><p>${interp.energy}</p></section>`;
+      fullHtml += `<section><h3>Енергія розкладу</h3><p>${interp.energy}</p></section>`;
     }
-
+    if (Array.isArray(interp.interactions)) {
+      fullHtml += `<section><h3>Взаємодії карт</h3>${interp.interactions.map((i) => `<p>${i}</p>`).join('')}</section>`;
+    }
     if (Array.isArray(interp.cards)) {
       interp.cards.forEach((card) => {
         if (card?.interpretation) {
-          html += `<section><h3>${card.position || 'Карта'}</h3><p>${card.interpretation}</p></section>`;
+          fullHtml += `<section><h3>${card.position || 'Карта'}</h3><p>${card.interpretation}</p></section>`;
         }
       });
     }
-
-    if (interp.advice) {
-      html += `<div class="advice">${interp.advice}</div>`;
+    if (Array.isArray(interp.advice)) {
+      fullHtml += `<div class="advice"><h3>Порада</h3>${interp.advice.map((a) => `<p>${a}</p>`).join('')}</div>`;
+    } else if (interp.advice) {
+      fullHtml += `<div class="advice"><h3>Порада</h3><p>${interp.advice}</p></div>`;
     }
-
     if (interp.shadow) {
-      html += `<section><h3>Тінь</h3><p>${interp.shadow}</p></section>`;
+      fullHtml += `<section><h3>Тінь</h3><p>${interp.shadow}</p></section>`;
     }
 
-    content.innerHTML = html || '<p style="color:rgba(200,185,230,0.5);text-align:center">Тлумачення готується...</p>';
+    content.innerHTML = `
+      ${glanceHtml}
+      <button class="mystic-full-toggle" id="full-toggle">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+        Читати повне тлумачення
+      </button>
+      <div class="mystic-full-text" id="full-text">
+        ${fullHtml || '<p style="color:rgba(200,185,230,0.5);text-align:center">Тлумачення готується...</p>'}
+      </div>
+    `;
+
+    const toggle = content.querySelector('#full-toggle');
+    const fullText = content.querySelector('#full-text');
+    if (toggle && fullText) {
+      toggle.addEventListener('click', () => {
+        const open = fullText.classList.toggle('open');
+        toggle.innerHTML = open
+          ? `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/></svg> Згорнути тлумачення`
+          : `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg> Читати повне тлумачення`;
+      });
+    }
+
     requestAnimationFrame(() => {
       const header = section.querySelector('.mystic-panel-header');
       if (header) header.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
