@@ -738,6 +738,47 @@ body::after {
   margin-top: 2rem;
 }
 
+.quiet-nickname-form {
+  margin-top: 2rem;
+}
+
+.quiet-nickname-label {
+  display: block;
+  text-align: center;
+  font-size: 1rem;
+  color: var(--ink);
+  margin-bottom: 0.75rem;
+  font-family: 'Cormorant Garamond', 'Georgia', serif;
+}
+
+.quiet-nickname-row {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.quiet-nickname-input {
+  padding: 0.85rem 1.2rem;
+  border-radius: 999px;
+  border: 1px solid rgba(124, 136, 184, 0.2);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--ink);
+  font-size: 1rem;
+  font-family: inherit;
+  outline: none;
+  min-width: 200px;
+  transition: border-color 0.2s;
+}
+
+.quiet-nickname-input::placeholder {
+  color: rgba(200, 195, 220, 0.3);
+}
+
+.quiet-nickname-input:focus {
+  border-color: rgba(160, 130, 255, 0.3);
+}
+
 .quiet-btn {
   display: inline-flex;
   align-items: center;

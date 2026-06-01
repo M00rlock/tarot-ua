@@ -11,8 +11,16 @@ template.innerHTML = `
         Карти, нотатки та м'які ШІ-рефлексії допоможуть сповільнитись і подивитись на свій стан уважніше.
       </p>
 
+      <form class="quiet-nickname-form" id="nickname-form">
+        <label for="nickname-input" class="quiet-nickname-label">Як до вас звертатись?</label>
+        <div class="quiet-nickname-row">
+          <input type="text" id="nickname-input" class="quiet-nickname-input"
+            placeholder="Нікнейм" maxlength="30" autocomplete="off" required>
+          <button type="submit" class="quiet-btn quiet-btn-primary">Почати сесію</button>
+        </div>
+      </form>
+
       <div class="quiet-actions">
-        <a class="quiet-btn quiet-btn-primary" href="/fast-session">Швидка містична сесія</a>
         <a class="quiet-btn quiet-btn-ghost" href="/session">Повільна сесія</a>
         <a class="quiet-btn quiet-btn-ghost" href="/journal">Відкрити щоденник</a>
       </div>
@@ -41,6 +49,7 @@ template.innerHTML = `
 `;
 
 import { adoptStyles } from '../shared-styles.js';
+import { saveNickname } from '../services/session-storage.js';
 
 export class HomePage extends HTMLElement {
   constructor() {
@@ -56,6 +65,15 @@ export class HomePage extends HTMLElement {
         e.preventDefault();
         window.navigateTo(a.getAttribute('href'));
       });
+    });
+    const form = this.shadowRoot.getElementById('nickname-form');
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const input = this.shadowRoot.getElementById('nickname-input');
+      const name = input.value.trim();
+      if (!name) return;
+      saveNickname(name);
+      window.navigateTo('/fast-session');
     });
   }
 }

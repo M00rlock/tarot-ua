@@ -1,7 +1,7 @@
 import { cardMeaning, delay } from '../utils.js';
 import { adoptStyles } from '../shared-styles.js';
 import { drawSpread, fetchSpreadDefinitions, fetchSpreadInterpretation } from '../services/api.js';
-import { saveSpreadSession, loadSpreadSession, saveInterpretationSession, loadInterpretationSession } from '../services/session-storage.js';
+import { saveSpreadSession, loadSpreadSession, saveInterpretationSession, loadInterpretationSession, loadNickname } from '../services/session-storage.js';
 import { trackEvent } from '../analytics/analytics.js';
 
 const SPREAD_META = [
@@ -20,7 +20,7 @@ template.innerHTML = `
   <main class="mystic-page page-enter">
     <section class="mystic-hero">
       <h1>Швидка містична сесія</h1>
-      <p class="subtitle">Оберіть практику — карти самі розкажуть історію. Жодної реєстрації, лише ви і символи.</p>
+      <p class="subtitle" id="session-subtitle">Оберіть практику — карти самі розкажуть історію. Жодної реєстрації, лише ви і символи.</p>
     </section>
 
     <section class="mystic-panel" id="spread-selector">
@@ -81,6 +81,11 @@ export class FastSession extends HTMLElement {
 
   async connectedCallback() {
     await adoptStyles(this);
+    const nickname = loadNickname();
+    const sub = this.shadowRoot.getElementById('session-subtitle');
+    if (nickname && sub) {
+      sub.textContent = `Вітаю, ${nickname}. Оберіть практику — карти самі розкажуть історію.`;
+    }
     this.bindEvents();
     this.drawSpreadGrid();
     this.spawnRunes();

@@ -44,3 +44,11 @@ export function saveInterpretationSession(data) {
 export function loadInterpretationSession() {
   return loadSession('interpretation');
 }
+
+export function saveNickname(name) {
+  saveSession('nickname', name);
+}
+
+export function loadNickname() {
+  return loadSession('nickname');
+}
