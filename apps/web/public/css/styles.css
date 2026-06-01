@@ -3528,9 +3528,9 @@ body::after {
 
 .post-energy {
   display: inline-block;
-  padding: 0.15rem 0.6rem;
+  padding: 0.2rem 0.75rem;
   border-radius: 999px;
-  font-size: 0.65rem;
+  font-size: 0.75rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -3548,9 +3548,9 @@ body::after {
 .post-summary-preview {
   display: block;
   font-family: 'Cormorant Garamond', 'Georgia', serif;
-  font-size: 0.85rem;
+  font-size: 0.95rem;
   color: rgba(220, 210, 240, 0.75);
-  line-height: 1.4;
+  line-height: 1.5;
   margin-top: 0.3rem;
 }
 
@@ -3574,25 +3574,25 @@ body::after {
 }
 
 .post-label {
-  font-size: 0.62rem;
+  font-size: 0.7rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: rgba(180, 155, 255, 0.6);
   white-space: nowrap;
-  min-width: 50px;
+  min-width: 60px;
 }
 
 .post-card-name {
   font-family: 'Cormorant Garamond', 'Georgia', serif;
-  font-size: 0.85rem;
+  font-size: 0.95rem;
   font-weight: 600;
   color: #e0d4ff;
 }
 
 .post-insight {
-  font-size: 0.78rem;
+  font-size: 0.88rem;
   color: rgba(220, 210, 240, 0.8);
-  line-height: 1.4;
+  line-height: 1.5;
   grid-column: 2;
 }
 
@@ -3603,44 +3603,44 @@ body::after {
 .post-interaction::before {
   content: '↷';
   color: rgba(180, 155, 255, 0.35);
-  font-size: 0.7rem;
+  font-size: 0.75rem;
 }
 
 .post-interaction {
   display: flex;
   gap: 0.5rem;
-  font-size: 0.78rem;
+  font-size: 0.88rem;
   color: rgba(220, 210, 240, 0.75);
-  line-height: 1.4;
+  line-height: 1.5;
 }
 
 .post-advice {
   display: flex;
   gap: 0.5rem;
-  font-size: 0.78rem;
+  font-size: 0.88rem;
   color: rgba(200, 230, 200, 0.8);
-  line-height: 1.4;
+  line-height: 1.5;
 }
 
 .post-advice::before {
   content: '▶';
   color: rgba(120, 220, 120, 0.45);
-  font-size: 0.6rem;
-  margin-top: 0.15rem;
+  font-size: 0.65rem;
+  margin-top: 0.18rem;
 }
 
 .post-shadow {
   display: flex;
   gap: 0.5rem;
-  font-size: 0.78rem;
+  font-size: 0.88rem;
   color: rgba(220, 180, 200, 0.8);
-  line-height: 1.4;
+  line-height: 1.5;
 }
 
 .post-shadow::before {
   content: '◐';
   color: rgba(220, 180, 200, 0.35);
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   margin-top: 0.1rem;
 }
 
@@ -3657,12 +3657,12 @@ body::after {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
-  padding: 0.35rem 0.75rem;
+  padding: 0.4rem 0.9rem;
   border-radius: 999px;
   border: 1px solid rgba(160, 130, 255, 0.12);
   background: transparent;
   color: rgba(220, 210, 240, 0.5);
-  font-size: 0.7rem;
+  font-size: 0.8rem;
   cursor: pointer;
   transition: all 0.2s;
   font-family: inherit;
@@ -3683,8 +3683,8 @@ body::after {
 /* Detail view keeps existing .summary, section, .advice styles */
 .detail-view .summary {
   font-family: 'Cormorant Garamond', 'Georgia', serif;
-  font-size: 1rem;
-  line-height: 1.6;
+  font-size: 1.05rem;
+  line-height: 1.65;
   color: rgba(230, 215, 255, 0.85);
   margin-bottom: 1.2rem;
   padding: 0.8rem 1rem;
@@ -3699,7 +3699,7 @@ body::after {
 
 .detail-view section h3 {
   font-family: 'Cormorant Garamond', 'Georgia', serif;
-  font-size: 0.85rem;
+  font-size: 0.9rem;
   font-weight: 600;
   color: rgba(180, 155, 255, 0.7);
   text-transform: uppercase;
@@ -3708,8 +3708,8 @@ body::after {
 }
 
 .detail-view section p {
-  font-size: 0.85rem;
-  line-height: 1.65;
+  font-size: 0.92rem;
+  line-height: 1.7;
   color: rgba(220, 210, 240, 0.8);
   margin: 0;
 }
@@ -3724,7 +3724,7 @@ body::after {
 
 .detail-view .advice h3 {
   font-family: 'Cormorant Garamond', 'Georgia', serif;
-  font-size: 0.85rem;
+  font-size: 0.9rem;
   font-weight: 600;
   color: rgba(180, 155, 255, 0.7);
   text-transform: uppercase;
@@ -3733,8 +3733,8 @@ body::after {
 }
 
 .detail-view .advice p {
-  font-size: 0.85rem;
-  line-height: 1.65;
+  font-size: 0.92rem;
+  line-height: 1.7;
   color: rgba(220, 210, 240, 0.8);
   margin: 0 0 0.5rem;
 }
