@@ -12,7 +12,8 @@ template.innerHTML = `
       </p>
 
       <div class="quiet-actions">
-        <a class="quiet-btn quiet-btn-primary" href="/session">Почати тиху сесію</a>
+        <a class="quiet-btn quiet-btn-primary" href="/fast-session">Швидка містична сесія</a>
+        <a class="quiet-btn quiet-btn-ghost" href="/session">Повільна сесія</a>
         <a class="quiet-btn quiet-btn-ghost" href="/journal">Відкрити щоденник</a>
       </div>
     </section>

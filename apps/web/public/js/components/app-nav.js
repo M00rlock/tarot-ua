@@ -6,6 +6,7 @@ template.innerHTML = `
       <span>Tarot UA</span>
     </a>
     <div class="quiet-nav-links">
+      <a href="/fast-session">Мить</a>
       <a href="/session">Сесія</a>
       <a href="/journal">Щоденник</a>
       <a href="/library">Карти</a>

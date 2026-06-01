@@ -6,7 +6,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const publicDir = path.resolve(__dirname, 'public');
 const envPath = path.resolve(__dirname, '.env');
 const port = parseInt(process.env.PORT || '5173', 10);
-const spaPaths = ['/', '/session', '/journal', '/library', '/meaning/', '/spreads/', '/share/'];
+const spaPaths = ['/', '/session', '/fast-session', '/journal', '/library', '/meaning/', '/spreads/', '/share/'];
 
 const MIME = {
   '.html': 'text/html; charset=utf-8',

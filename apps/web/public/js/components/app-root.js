@@ -45,6 +45,7 @@ export class AppRoot extends HTMLElement {
     }
 
     if (path === '/session' || path === '/session/') route = { kind: 'session', slug: '' };
+    if (path === '/fast-session' || path === '/fast-session/') route = { kind: 'fast-session', slug: '' };
     if (path === '/journal' || path === '/journal/') route = { kind: 'journal', slug: '' };
     if (path === '/library' || path === '/library/') route = { kind: 'library', slug: '' };
     if (path === '/' || path === '') route = { kind: 'home', slug: '' };
@@ -77,6 +78,9 @@ export class AppRoot extends HTMLElement {
         break;
       case 'session':
         element = document.createElement('tarot-board');
+        break;
+      case 'fast-session':
+        element = document.createElement('fast-session');
         break;
       case 'journal':
         element = document.createElement('journal-page');
