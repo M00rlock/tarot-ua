@@ -1,22 +1,3 @@
-const tokenKey = 'tarot-access-token';
-
-export function getAccessToken() {
-  return localStorage.getItem(tokenKey) || '';
-}
-
-export function setAccessToken(token) {
-  localStorage.setItem(tokenKey, token);
-}
-
-export function clearAccessToken() {
-  localStorage.removeItem(tokenKey);
-}
-
-function authHeaders() {
-  const token = getAccessToken();
-  return token ? { Authorization: `Bearer ${token}` } : {};
-}
-
 const baseHeaders = { 'Content-Type': 'application/json' };
 
 async function parseJson(response, fallbackMessage) {
@@ -29,63 +10,6 @@ async function parseJson(response, fallbackMessage) {
     throw new Error(message);
   }
   return response.json();
-}
-
-export async function registerUser(input) {
-  const session = await parseJson(await fetch('/api/auth/register', {
-    method: 'POST',
-    headers: baseHeaders,
-    body: JSON.stringify(input)
-  }), 'Не вдалося створити акаунт');
-  setAccessToken(session.accessToken);
-  return session;
-}
-
-export async function loginUser(input) {
-  const session = await parseJson(await fetch('/api/auth/login', {
-    method: 'POST',
-    headers: baseHeaders,
-    body: JSON.stringify(input)
-  }), 'Не вдалося увійти');
-  setAccessToken(session.accessToken);
-  return session;
-}
-
-export async function fetchProfile() {
-  return parseJson(await fetch('/api/auth/me', {
-    headers: { ...baseHeaders, ...authHeaders() }
-  }), 'Не вдалося завантажити профіль');
-}
-
-export async function fetchCloudSpreads(favorite) {
-  const suffix = favorite === undefined ? '' : `?favorite=${favorite}`;
-  return parseJson(await fetch(`/api/me/spreads${suffix}`, {
-    headers: { ...baseHeaders, ...authHeaders() }
-  }), 'Не вдалося завантажити історію');
-}
-
-export async function saveCloudSpread(input) {
-  return parseJson(await fetch('/api/me/spreads', {
-    method: 'POST',
-    headers: { ...baseHeaders, ...authHeaders() },
-    body: JSON.stringify(input)
-  }), 'Не вдалося зберегти розклад');
-}
-
-export async function markCloudFavorite(id, favorite) {
-  return parseJson(await fetch(`/api/me/spreads/${id}/favorite`, {
-    method: 'PATCH',
-    headers: { ...baseHeaders, ...authHeaders() },
-    body: JSON.stringify({ favorite })
-  }), 'Не вдалося оновити обране');
-}
-
-export async function updateCloudSpreadNote(id, note) {
-  return parseJson(await fetch(`/api/me/spreads/${id}/note`, {
-    method: 'PATCH',
-    headers: { ...baseHeaders, ...authHeaders() },
-    body: JSON.stringify({ note })
-  }), 'Не вдалося зберегти нотатку');
 }
 
 export async function createShareableSpread(input) {

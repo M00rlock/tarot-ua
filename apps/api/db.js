@@ -1,86 +1,29 @@
-const { Pool } = require('pg');
+const { existsSync, mkdirSync, readFileSync, writeFileSync } = require('node:fs');
+const { resolve } = require('node:path');
 
-const pool = new Pool({
-  host: process.env.POSTGRES_HOST || 'localhost',
-  port: Number(process.env.POSTGRES_PORT || 5432),
-  user: process.env.POSTGRES_USER || 'tarot',
-  password: process.env.POSTGRES_PASSWORD || 'tarot',
-  database: process.env.POSTGRES_DB || 'tarot',
-  max: 10,
-  idleTimeoutMillis: 30000,
-});
+const DATA_DIR = resolve(__dirname, 'data');
+const SHARED_FILE = resolve(DATA_DIR, 'shared-spreads.json');
 
-async function query(text, params) {
-  const client = await pool.connect();
-  try {
-    const result = await client.query(text, params);
-    return result;
-  } finally {
-    client.release();
+function ensureDir() {
+  if (!existsSync(DATA_DIR)) {
+    mkdirSync(DATA_DIR, { recursive: true });
   }
 }
 
-async function createTables() {
-  const client = await pool.connect();
+function readShared() {
+  ensureDir();
+  if (!existsSync(SHARED_FILE)) return [];
   try {
-    await client.query('BEGIN');
-
-    await client.query(`
-      CREATE TABLE IF NOT EXISTS users (
-        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-        email TEXT UNIQUE NOT NULL,
-        name TEXT NOT NULL,
-        password_hash TEXT NOT NULL,
-        premium_tier VARCHAR(20) NOT NULL DEFAULT 'free',
-        premium_until TIMESTAMPTZ,
-        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-      )
-    `);
-
-    await client.query(`
-      CREATE TABLE IF NOT EXISTS user_spreads (
-        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-        title TEXT NOT NULL,
-        spread_type VARCHAR(50) NOT NULL,
-        cards JSONB NOT NULL,
-        interpretation JSONB,
-        favorite BOOLEAN NOT NULL DEFAULT false,
-        note TEXT,
-        user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-      )
-    `);
-
-    await client.query(`
-      CREATE TABLE IF NOT EXISTS shared_spreads (
-        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-        slug VARCHAR(12) UNIQUE NOT NULL,
-        title TEXT NOT NULL,
-        spread_type VARCHAR(50) NOT NULL,
-        cards JSONB NOT NULL,
-        interpretation JSONB,
-        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-      )
-    `);
-
-    await client.query(`
-      CREATE INDEX IF NOT EXISTS idx_user_spreads_user_id ON user_spreads(user_id)
-    `);
-
-    await client.query(`
-      CREATE INDEX IF NOT EXISTS idx_user_spreads_favorite ON user_spreads(user_id, favorite)
-    `);
-
-    await client.query('COMMIT');
-    console.log('Database tables created successfully');
-  } catch (error) {
-    await client.query('ROLLBACK');
-    console.error('Failed to create tables:', error.message);
-    throw error;
-  } finally {
-    client.release();
+    const raw = readFileSync(SHARED_FILE, 'utf8');
+    return JSON.parse(raw);
+  } catch {
+    return [];
   }
 }
 
-module.exports = { pool, query, createTables };
+function writeShared(spreads) {
+  ensureDir();
+  writeFileSync(SHARED_FILE, JSON.stringify(spreads, null, 2), 'utf8');
+}
+
+module.exports = { readShared, writeShared };

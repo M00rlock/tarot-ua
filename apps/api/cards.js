@@ -1,5 +1,3 @@
-const gremlin = require('gremlin');
-
 const TAROT_SEED = [
   { id: 'the-fool', name: 'Дурень', arcana: 'major', keywords: ['новий старт', 'спонтанність', 'сміливість'], meaningUpright: 'Час зробити крок у невідоме та довіритися життю.', meaningReversed: 'Імпульсивність або страх нового блокує рух уперед.', image: '/cards/the-fool.svg' },
   { id: 'the-magician', name: 'Маг', arcana: 'major', keywords: ['фокус', 'воля', 'реалізація'], meaningUpright: 'Твої навички та концентрація допоможуть втілити задум.', meaningReversed: 'Розфокус або спроба контролювати все одразу.', image: '/cards/the-magician.svg' },
@@ -88,79 +86,8 @@ const SPREAD_DEFINITIONS = [
   { id: 'career5', title: 'Кар\'єра та гроші', count: 5, positions: [{ name: 'Поточна роль', description: 'Де ти зараз у професійному або фінансовому питанні.' }, { name: 'Сильна сторона', description: 'На що варто спертися, щоб рухатися швидше.' }, { name: 'Ризик', description: 'Що може забирати ресурс або створити помилку.' }, { name: 'Можливість', description: 'Де є потенціал росту, грошей або нового напрямку.' }, { name: 'Наступний крок', description: 'Конкретний фокус для дії найближчим часом.' }] },
 ];
 
-function createGremlinClient() {
-  const endpoint = process.env.JANUSGRAPH_ENDPOINT || 'ws://localhost:8182/gremlin';
-  try {
-    const { driver } = gremlin;
-    return new driver.Client(endpoint, { traversalSource: 'g', mimeType: 'application/vnd.gremlin-v3.0+json' });
-  } catch {
-    return null;
-  }
-}
-
-async function getCards(limit) {
-  const client = createGremlinClient();
-  if (!client) return TAROT_SEED.slice(0, limit || 78);
-
-  try {
-    const result = await client.submit(
-      `g.V().hasLabel("card").limit(${limit || 78})
-       .project("id","name","arcana","keywords","meaningUpright","meaningReversed","image")
-        .by(values("cardId")).by(values("name")).by(values("arcana"))
-        .by(values("keywords")).by(values("meaningUpright")).by(values("meaningReversed")).by(values("image"))`
-    );
-    const rows = result.toArray();
-    if (rows.length === 0) return TAROT_SEED.slice(0, limit || 78);
-
-    return rows.map((row, index) => {
-      const getFirst = (key) => {
-        const val = row.get(key);
-        return Array.isArray(val) ? val[0] : val;
-      };
-      const seedFallbackId = TAROT_SEED[index % TAROT_SEED.length].id;
-      return {
-        id: String(getFirst('id') || seedFallbackId),
-        name: String(getFirst('name') || 'Невідома карта'),
-        arcana: getFirst('arcana') || 'major',
-        keywords: normalizeKeywords(row.get('keywords')),
-        meaningUpright: String(getFirst('meaningUpright') || ''),
-        meaningReversed: String(getFirst('meaningReversed') || ''),
-        image: String(getFirst('image') || `/cards/${seedFallbackId}.svg`),
-      };
-    });
-  } catch {
-    return TAROT_SEED.slice(0, limit || 78);
-  }
-}
-
-async function seedGremlinIfNeeded() {
-  const client = createGremlinClient();
-  if (!client) return;
-
-  try {
-    const check = await client.submit('g.V().hasLabel("card").count()');
-    const count = Number(check.first());
-    if (count > 0) return;
-
-    for (const card of TAROT_SEED) {
-      await client.submit(
-        'g.addV("card").property("cardId", cardId).property("name", name).property("arcana", arcana).property("keywords", keywords).property("meaningUpright", upright).property("meaningReversed", reversed).property("image", image)',
-        { cardId: card.id, name: card.name, arcana: card.arcana, keywords: card.keywords.join(', '), upright: card.meaningUpright, reversed: card.meaningReversed, image: card.image }
-      );
-    }
-  } catch {
-    // JanusGraph not available
-  }
-}
-
-function normalizeKeywords(value) {
-  if (Array.isArray(value)) {
-    return value.flatMap((item) => String(item).split(',')).map((s) => s.trim()).filter(Boolean);
-  }
-  if (typeof value === 'string') {
-    return value.split(',').map((s) => s.trim()).filter(Boolean);
-  }
-  return [];
+function getCards(limit) {
+  return TAROT_SEED.slice(0, limit || 78);
 }
 
 function resolveSpread(count, spreadType) {
@@ -277,7 +204,7 @@ function buildNextStep(focus, adviceCard, tone) {
 
 async function drawSpread(count, spreadType) {
   const definition = resolveSpread(count, spreadType);
-  const cards = await getCards(78);
+  const cards = getCards(78);
   const safeCount = Math.max(1, Math.min(definition.count, Math.min(cards.length, definition.positions.length)));
   const pool = [...cards];
   const spread = [];
@@ -291,7 +218,7 @@ async function drawSpread(count, spreadType) {
 }
 
 async function getCardOfDay(date) {
-  const cards = await getCards(1);
+  const cards = getCards(1);
   const dayKey = toDayKey(date || new Date());
   const h = hash(dayKey);
   return {
@@ -475,7 +402,6 @@ function stringArray(value, fallback) {
 
 module.exports = {
   getCards,
-  seedGremlinIfNeeded,
   getSpreadDefinitions: () => SPREAD_DEFINITIONS,
   drawSpread,
   getCardOfDay,

@@ -2,11 +2,8 @@ const http = require('node:http');
 const { URL } = require('node:url');
 require('./env');
 
-const { createTables } = require('./db');
-const auth = require('./auth');
-const spreads = require('./spreads');
-const share = require('./share');
 const cards = require('./cards');
+const share = require('./share');
 
 const PORT = Number(process.env.PORT || 3000);
 const HOST = process.env.HOST || '127.0.0.1';
@@ -70,41 +67,10 @@ async function router(req, res) {
       return;
     }
 
-    // Auth health
-    if (method === 'GET' && path === '/api/auth/health') {
-      jsonResponse(res, 200, { ok: true, scope: 'auth' });
-      return;
-    }
-
-    // Auth register
-    if (method === 'POST' && path === '/api/auth/register') {
-      const body = await parseBody(req);
-      const result = await auth.register(body);
-      jsonResponse(res, 201, result);
-      return;
-    }
-
-    // Auth login
-    if (method === 'POST' && path === '/api/auth/login') {
-      const body = await parseBody(req);
-      const result = await auth.login(body);
-      jsonResponse(res, 200, result);
-      return;
-    }
-
-    // Auth me
-    if (method === 'GET' && path === '/api/auth/me') {
-      auth.authMiddleware(req, res, async () => {
-        const result = await auth.profile(req.user.sub);
-        jsonResponse(res, 200, result);
-      });
-      return;
-    }
-
     // Tarot cards
     if (method === 'GET' && path === '/api/tarot/cards') {
       const count = Number(url.searchParams.get('count') || 78);
-      const result = await cards.getCards(count);
+      const result = cards.getCards(count);
       jsonResponse(res, 200, result);
       return;
     }
@@ -139,49 +105,6 @@ async function router(req, res) {
       const safeDate = Number.isNaN(date.getTime()) ? new Date() : date;
       const result = await cards.getCardOfDay(safeDate);
       jsonResponse(res, 200, result);
-      return;
-    }
-
-    // User spreads list
-    if (method === 'GET' && path === '/api/me/spreads') {
-      auth.authMiddleware(req, res, async () => {
-        const favoriteParam = url.searchParams.get('favorite');
-        const favorite = favoriteParam === undefined ? undefined : favoriteParam === 'true';
-        const result = await spreads.list(req.user.sub, favorite);
-        jsonResponse(res, 200, result);
-      });
-      return;
-    }
-
-    // User spreads create
-    if (method === 'POST' && path === '/api/me/spreads') {
-      auth.authMiddleware(req, res, async () => {
-        const body = await parseBody(req);
-        const result = await spreads.create(req.user.sub, body);
-        jsonResponse(res, 201, result);
-      });
-      return;
-    }
-
-    // User spreads favorite
-    const favoriteMatch = path.match(/^\/api\/me\/spreads\/([a-f0-9-]+)\/favorite$/);
-    if (method === 'PATCH' && favoriteMatch) {
-      auth.authMiddleware(req, res, async () => {
-        const body = await parseBody(req);
-        const result = await spreads.setFavorite(req.user.sub, favoriteMatch[1], body.favorite);
-        jsonResponse(res, 200, result);
-      });
-      return;
-    }
-
-    // User spreads note
-    const noteMatch = path.match(/^\/api\/me\/spreads\/([a-f0-9-]+)\/note$/);
-    if (method === 'PATCH' && noteMatch) {
-      auth.authMiddleware(req, res, async () => {
-        const body = await parseBody(req);
-        const result = await spreads.setNote(req.user.sub, noteMatch[1], body.note || '');
-        jsonResponse(res, 200, result);
-      });
       return;
     }
 
@@ -229,20 +152,8 @@ async function router(req, res) {
   }
 }
 
-async function start() {
-  try {
-    await createTables();
-    console.log('Connected to PostgreSQL');
-  } catch (error) {
-    console.error('PostgreSQL connection failed:', error.message);
-    console.log('Starting without database — auth and spreads will fail');
-  }
+const server = http.createServer(router);
 
-  const server = http.createServer(router);
-
-  server.listen(PORT, HOST, () => {
-    console.log(`API server running at http://${HOST}:${PORT}`);
-  });
-}
-
-start();
+server.listen(PORT, HOST, () => {
+  console.log(`API server running at http://${HOST}:${PORT}`);
+});

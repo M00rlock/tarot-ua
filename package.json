@@ -5,6 +5,6 @@
   "scripts": {
     "start": "node apps/web/server.js",
     "start:web": "node apps/web/server.js",
-    "start:api": "npm --workspace apps/api run start:dev"
+    "start:api": "node apps/api/server.js"
   }
 }

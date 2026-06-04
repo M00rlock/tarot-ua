@@ -4,16 +4,7 @@
   "private": true,
   "type": "commonjs",
   "scripts": {
-    "start": "node server.js",
-    "start:dev": "nodemon --watch . --ext js,json --exec \"node server.js\""
+    "start": "node server.js"
   },
-  "dependencies": {
-    "bcryptjs": "^3.0.3",
-    "gremlin": "^3.7.3",
-    "jsonwebtoken": "^9.0.2",
-    "pg": "^8.20.0"
-  },
-  "devDependencies": {
-    "nodemon": "^3.1.7"
-  }
+  "dependencies": {}
 }

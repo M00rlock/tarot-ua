@@ -1,33 +1,36 @@
 const { randomBytes } = require('node:crypto');
-const { query } = require('./db');
+const { readShared, writeShared } = require('./db');
 
 async function create(input, origin = '') {
-  const slug = await createUniqueSlug();
+  const slug = createSlug();
   const title = input.title || 'Мій розклад Таро';
 
-  const result = await query(
-    `INSERT INTO shared_spreads (slug, title, spread_type, cards, interpretation)
-     VALUES ($1, $2, $3, $4, $5) RETURNING *`,
-    [
-      slug,
-      title,
-      input.spreadType,
-      JSON.stringify(input.cards),
-      input.interpretation ? JSON.stringify(input.interpretation) : null,
-    ]
-  );
+  const record = {
+    id: randomBytes(12).toString('hex'),
+    slug,
+    title,
+    spread_type: input.spreadType,
+    cards: input.cards,
+    interpretation: input.interpretation || null,
+    created_at: new Date().toISOString(),
+  };
 
-  return toShareResponse(result.rows[0], origin);
+  const spreads = readShared();
+  spreads.push(record);
+  writeShared(spreads);
+
+  return toShareResponse(record, origin);
 }
 
 async function findBySlug(slug) {
-  const result = await query('SELECT * FROM shared_spreads WHERE slug = $1', [slug]);
-  if (result.rows.length === 0) {
+  const spreads = readShared();
+  const record = spreads.find((s) => s.slug === slug);
+  if (!record) {
     const err = new Error('Публічний розклад не знайдено');
     err.statusCode = 404;
     throw err;
   }
-  return result.rows[0];
+  return record;
 }
 
 function toShareResponse(spread, origin = '') {
@@ -109,13 +112,8 @@ function renderSocialCardSvg(spread) {
 </svg>`;
 }
 
-async function createUniqueSlug() {
-  for (let i = 0; i < 5; i += 1) {
-    const slug = randomBytes(5).toString('base64url');
-    const existing = await query('SELECT id FROM shared_spreads WHERE slug = $1', [slug]);
-    if (existing.rows.length === 0) return slug;
-  }
-  return randomBytes(8).toString('base64url');
+function createSlug() {
+  return randomBytes(5).toString('base64url');
 }
 
 function escapeXml(value) {

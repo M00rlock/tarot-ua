@@ -1,16 +1,14 @@
 import { delay, getTodayLabel, cardMeaning } from '../utils.js';
 import { buildSharePreview } from '../share-preview.js';
-import { trackEvent, spreadAnalyticsPayload, interpretationAnalyticsPayload, identifyUser, resetAnalyticsUser } from '../analytics/analytics.js';
-import { getFlags, onFlagsChange, refreshFeatureFlags } from '../analytics/use-features.js';
+import { trackEvent, spreadAnalyticsPayload, interpretationAnalyticsPayload } from '../analytics/analytics.js';
+import { getFlags, onFlagsChange } from '../analytics/use-features.js';
 import { INTERPRETATION_TONES } from '../constants/interpretation.js';
 import {
   createShareableSpread, drawSpread, fetchCardOfDay,
-  fetchCards, fetchCloudSpreads, fetchSharedSpread,
+  fetchCards, fetchSharedSpread,
   fetchSpreadDefinitions, fetchSpreadInterpretation,
-  saveCloudSpread, updateCloudSpreadNote, getAccessToken,
-  clearAccessToken, loginUser, registerUser, fetchProfile,
-  setAccessToken
 } from '../services/api.js';
+import { loadJournal, addEntry, updateEntry, loadFavorites } from '../services/journal-storage.js';
 
 const template = document.createElement('template');
 template.innerHTML = `
@@ -60,10 +58,6 @@ export class TarotBoard extends HTMLElement {
     this.shadowRoot.appendChild(template.content.cloneNode(true));
 
     this.currentUser = null;
-    this.authMode = 'login';
-    this.authLoading = false;
-    this.authForm = { name: '', email: '', password: '' };
-
     this.cards = [];
     this.showDeck = false;
     this.deckLoading = false;
@@ -103,10 +97,8 @@ export class TarotBoard extends HTMLElement {
     trackEvent('app_opened', {});
 
     try {
-      await this.restoreSession();
-      if (this.currentUser) {
-        await this.syncUserLists();
-      }
+      this.loadLocalUser();
+      this.syncLocalLists();
       await Promise.all([this.loadCardOfDay(), this.loadSpreadDefinitions()]);
 
       const sharedMatch = window.location.pathname.match(/^\/share\/([A-Za-z0-9_-]+)/);
@@ -119,6 +111,14 @@ export class TarotBoard extends HTMLElement {
     } catch (err) {
       this.error = err instanceof Error ? err.message : 'Сталася помилка';
     }
+  }
+
+  loadLocalUser() {
+    const name = localStorage.getItem('tarot-nickname') || '';
+    if (name) {
+      this.currentUser = { name };
+    }
+    this.updateAuthPanel();
   }
 
   bindEvents() {
@@ -142,14 +142,9 @@ export class TarotBoard extends HTMLElement {
     });
 
     const authPanel = root.getElementById('auth-panel');
-    authPanel.addEventListener('submit-auth', () => this.handleSubmitAuth());
-    authPanel.addEventListener('logout', () => this.handleLogout());
-    authPanel.addEventListener('toggle-auth-mode', () => {
-      this.authMode = this.authMode === 'login' ? 'register' : 'login';
-      authPanel.mode = this.authMode;
-    });
-    authPanel.addEventListener('update-form', (e) => {
-      this.authForm = e.detail;
+    authPanel.addEventListener('name-changed', (e) => {
+      this.currentUser = e.detail.name ? { name: e.detail.name } : null;
+      this.syncLocalLists();
     });
 
     const ritualSelector = root.getElementById('ritual-selector');
@@ -197,61 +192,9 @@ export class TarotBoard extends HTMLElement {
     hero.classList.toggle('hero-v2', enabled);
   }
 
-  // Auth methods
-  async handleSubmitAuth() {
-    if (!this.authForm.email.trim() || !this.authForm.password.trim()) return;
-
-    this.authLoading = true;
-    try {
-      const session = this.authMode === 'login'
-        ? await loginUser({ email: this.authForm.email, password: this.authForm.password })
-        : await registerUser({ email: this.authForm.email, password: this.authForm.password, name: this.authForm.name });
-
-      this.currentUser = session.user;
-      identifyUser(session.user);
-      trackEvent(this.authMode === 'login' ? 'login_completed' : 'registration_completed', {
-        premiumTier: session.user.premiumTier
-      });
-      this.authForm = { name: '', email: '', password: '' };
-
-      this.syncUserLists();
-    } catch (err) {
-      this.error = err instanceof Error ? err.message : 'Не вдалося авторизуватись';
-    } finally {
-      this.authLoading = false;
-    }
-  }
-
-  handleLogout() {
-    trackEvent('logout_clicked');
-    clearAccessToken();
-    resetAnalyticsUser();
-    this.currentUser = null;
-    this.spreadHistory = [];
-    this.favoriteSpreads = [];
-    this.updateAuthPanel();
-  }
-
-  async restoreSession() {
-    if (getAccessToken()) {
-      try {
-        this.currentUser = await fetchProfile();
-        identifyUser(this.currentUser);
-        this.updateAuthPanel();
-        return true;
-      } catch {
-        clearAccessToken();
-      }
-    }
-    return false;
-  }
-
   updateAuthPanel() {
     const panel = this.shadowRoot.getElementById('auth-panel');
-    panel.user = this.currentUser;
-    panel.mode = this.authMode;
-    panel.loading = this.authLoading;
-    panel.form = this.authForm;
+    if (panel.updateUI) panel.updateUI();
   }
 
   // Session methods
@@ -405,21 +348,9 @@ export class TarotBoard extends HTMLElement {
     await this.generateInterpretation();
   }
 
-  async syncUserLists() {
-    if (!this.currentUser) {
-      this.spreadHistory = [];
-      this.favoriteSpreads = [];
-      this.updateJournals();
-      return;
-    }
-
-    const [history, favorites] = await Promise.all([
-      fetchCloudSpreads(),
-      fetchCloudSpreads(true)
-    ]);
-
-    this.spreadHistory = history;
-    this.favoriteSpreads = favorites;
+  syncLocalLists() {
+    this.spreadHistory = loadJournal();
+    this.favoriteSpreads = loadFavorites();
     this.updateJournals();
   }
 
@@ -429,9 +360,9 @@ export class TarotBoard extends HTMLElement {
   }
 
   async saveSpreadToHistory(cards, title) {
-    if (!this.currentUser || !cards.length) return;
+    if (!cards.length) return;
 
-    const saved = await saveCloudSpread({
+    const saved = addEntry({
       title,
       spreadType: this.activeSpreadType,
       cards,
@@ -445,17 +376,11 @@ export class TarotBoard extends HTMLElement {
   }
 
   async saveFavoriteSpread() {
-    if (!this.currentUser) {
-      this.copyStatus = 'Спочатку увійди, щоб зберігати обрані розклади.';
-      this.updateSpreadBoard();
-      return;
-    }
-
     if (!this.spread.length) return;
 
     try {
       const def = this.spreadDefinitions.find((d) => d.id === this.activeSpreadType);
-      const saved = await saveCloudSpread({
+      const saved = addEntry({
         title: def?.title ?? 'Обраний розклад',
         spreadType: this.activeSpreadType,
         cards: this.spread,
@@ -496,11 +421,13 @@ export class TarotBoard extends HTMLElement {
 
   async saveJournalNote(payload) {
     try {
-      const updated = await updateCloudSpreadNote(payload.id, payload.note);
-      this.spreadHistory = this.spreadHistory.map((item) => item.id === updated.id ? updated : item);
-      this.favoriteSpreads = this.favoriteSpreads.map((item) => item.id === updated.id ? updated : item);
-      trackEvent('journal_note_saved', { id: payload.id, noteLength: payload.note.length });
-      this.copyStatus = 'Нотатку збережено.';
+      const updated = updateEntry(payload.id, { note: payload.note });
+      if (updated) {
+        this.spreadHistory = loadJournal();
+        this.favoriteSpreads = loadFavorites();
+        trackEvent('journal_note_saved', { id: payload.id, noteLength: payload.note.length });
+        this.copyStatus = 'Нотатку збережено.';
+      }
     } catch (err) {
       this.copyStatus = err instanceof Error ? err.message : 'Не вдалося зберегти нотатку.';
     }

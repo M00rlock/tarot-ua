@@ -9,4 +9,5 @@ pnpm-debug.log*
 
 apps/*/dist
 apps/*/.vite
+apps/api/data
 coverage
