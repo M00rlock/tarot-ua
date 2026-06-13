@@ -1,0 +1,11 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <script>
+      // GitHub Pages SPA redirect
+      const path = location.pathname.slice(1);
+      location.replace('/?p=' + encodeURIComponent(path) + location.search.slice(1) + location.hash);
+    </script>
+  </head>
+</html>

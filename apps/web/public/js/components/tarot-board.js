@@ -33,7 +33,7 @@ template.innerHTML = `
     <ritual-selector id="ritual-selector"></ritual-selector>
     <card-of-day-panel id="card-of-day"></card-of-day-panel>
     <spread-board id="spread-board"></spread-board>
-    <share-panel id="share-panel"></share-panel>
+    <share-panel id="share-panel" style="display:none"></share-panel>
 
     <section id="premium-preview" class="panel premium-preview-panel" style="display:none">
       <p class="eyebrow">Попередній перегляд преміум</p>
@@ -154,7 +154,7 @@ export class TarotBoard extends HTMLElement {
     const spreadBoard = root.getElementById('spread-board');
     spreadBoard.addEventListener('favorite', () => this.saveFavoriteSpread());
     spreadBoard.addEventListener('copy', () => this.copySpreadText());
-    spreadBoard.addEventListener('share', () => this.shareCurrentSpread());
+    // spreadBoard.addEventListener('share', () => this.shareCurrentSpread()); // TODO: share
     spreadBoard.addEventListener('image-error', (e) => this.setPlaceholderImage(e.detail));
 
     const interpPanel = root.getElementById('interpretation-panel');

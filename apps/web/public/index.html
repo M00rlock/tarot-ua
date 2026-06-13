@@ -13,8 +13,14 @@
     <meta property="og:image" content="/seo/og-default.svg" />
     <meta property="og:url" content="/" />
     <meta name="twitter:card" content="summary_large_image" />
-    <script type="module">
+    <script>
       window.ENV = window.ENV || {};
+      // GitHub Pages SPA redirect restore
+      (function () {
+        const q = new URLSearchParams(location.search);
+        const p = q.get('p');
+        if (p) history.replaceState(null, '', '/' + decodeURIComponent(p));
+      })();
     </script>
     <link rel="stylesheet" href="/css/styles.css" />
   </head>

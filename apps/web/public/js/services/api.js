@@ -1,54 +1,31 @@
-const baseHeaders = { 'Content-Type': 'application/json' };
+import { getCards, getSpreadDefinitions, drawSpread, getCardOfDay, generateInterpretation } from './tarot-engine.js';
 
-async function rozibratyJson(response, fallbackMessage) {
-  if (!response.ok) {
-    let message = fallbackMessage;
-    try {
-      const error = await response.json();
-      message = error.message || message;
-    } catch {}
-    throw new Error(message);
-  }
-  return response.json();
+export function zavantazhytyKarta(kilkist = 78) {
+  return Promise.resolve(getCards(kilkist));
 }
 
-export async function stvorytyDostupnyiRozkład(input) {
-  return rozibratyJson(await fetch('/api/share/spreads', {
-    method: 'POST',
-    headers: baseHeaders,
-    body: JSON.stringify(input)
-  }), 'Не вдалося створити публічне посилання');
+export function zavantazhytyRozkładVyznachennia() {
+  return Promise.resolve(getSpreadDefinitions());
 }
 
-export async function zavantazhytySpilnyiRozkład(slug) {
-  return rozibratyJson(await fetch(`/api/share/spreads/${encodeURIComponent(slug)}`, {
-    headers: baseHeaders
-  }), 'Публічний розклад не знайдено');
+export function namaliuvatyRozkład(kilkist = 3, type) {
+  return Promise.resolve(drawSpread(kilkist, type));
 }
 
-export async function zavantazhytyKarta(kilkist = 78) {
-  return rozibratyJson(await fetch(`/api/tarot/cards?count=${kilkist}`, { headers: baseHeaders }), 'Не вдалося завантажити карти');
+export function zavantazhytyKartaDen(date) {
+  return Promise.resolve(getCardOfDay(date ? new Date(date) : new Date()));
 }
 
-export async function zavantazhytyRozkładVyznachennia() {
-  return rozibratyJson(await fetch('/api/tarot/spreads', { headers: baseHeaders }), 'Не вдалося завантажити типи розкладів');
+export function zavantazhytyRozkładInterpretatsiia(spread, type, tone = 'psychological') {
+  return Promise.resolve(generateInterpretation(spread, type, tone));
 }
 
-export async function namaliuvatyRozkład(kilkist = 3, type) {
-  const params = new URLSearchParams({ count: String(kilkist) });
-  if (type) params.set('type', type);
-  return rozibratyJson(await fetch(`/api/tarot/draw?${params.toString()}`, { headers: baseHeaders }), 'Не вдалося зробити розклад');
+// --- Share (прихована фіча, буде реалізована пізніше) ---
+
+export function stvorytyDostupnyiRozkład(_input) {
+  return Promise.reject(new Error('Sharing тимчасово недоступний'));
 }
 
-export async function zavantazhytyKartaDen(date) {
-  const suffix = date ? `?date=${encodeURIComponent(date)}` : '';
-  return rozibratyJson(await fetch(`/api/tarot/card-of-day${suffix}`, { headers: baseHeaders }), 'Не вдалося отримати карту дня');
-}
-
-export async function zavantazhytyRozkładInterpretatsiia(spread, type, tone = 'psychological') {
-  return rozibratyJson(await fetch('/api/tarot/interpretation', {
-    method: 'POST',
-    headers: baseHeaders,
-    body: JSON.stringify({ spread, type, tone })
-  }), 'Не вдалося згенерувати ШІ-тлумачення');
+export function zavantazhytySpilnyiRozkład(_slug) {
+  return Promise.reject(new Error('Sharing тимчасово недоступний'));
 }
