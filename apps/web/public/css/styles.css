@@ -1435,6 +1435,8 @@ img {
 }
 
 .detail-row:last-child:nth-child(odd) .position-hint {
+  padding-top: 10px;
+  margin: auto;
   text-align: center;
 }
 

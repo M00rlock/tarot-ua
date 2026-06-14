@@ -66,13 +66,6 @@ node apps/web/server.js
 
 Жодна БД або API не потрібна. Застосунок працює повністю автономно.
 
-## Аналітика
-
-Аналітика за бажанням через PostHog. Файл `apps/web/.env`:
-
-```env
-POSTHOG_KEY=phc_...
-POSTHOG_HOST=https://eu.i.posthog.com
 ```
 
 Для вимкнення: `localStorage['tarot-analytics-opt-out'] = 'true'`.
