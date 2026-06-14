@@ -1434,6 +1434,10 @@ img {
   text-align: center;
 }
 
+.detail-row:last-child:nth-child(odd) .position-hint {
+  text-align: center;
+}
+
 .detail-row .position,
 .detail-row .position-hint,
 .detail-row .keywords,

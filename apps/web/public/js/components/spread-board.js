@@ -57,7 +57,7 @@ export class SpreadBoard extends HTMLElement {
       this.dispatchEvent(new CustomEvent('favorite'));
     });
     this.shadowRoot.getElementById('copy-btn').addEventListener('click', () => {
-      this.dispatchEvent(new CustomEvent('copy'));
+      this.dispatchEvent(new CustomEvent('copy-spread'));
     });
     this.shadowRoot.getElementById('share-btn').addEventListener('click', () => {
       this.dispatchEvent(new CustomEvent('share'));

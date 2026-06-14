@@ -156,7 +156,7 @@ export class TarotBoard extends HTMLElement {
 
     const spreadBoard = root.getElementById('spread-board');
     spreadBoard.addEventListener('favorite', () => this.saveFavoriteSpread());
-    spreadBoard.addEventListener('copy', () => this.copySpreadText());
+    spreadBoard.addEventListener('copy-spread', () => this.copySpreadText());
     // spreadBoard.addEventListener('share', () => this.shareCurrentSpread()); // TODO: share
     spreadBoard.addEventListener('image-error', (e) => this.setPlaceholderImage(e.detail));
 
